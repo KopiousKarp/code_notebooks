@@ -1,0 +1,8 @@
+#ignore virtual environemnts
+labkernel/
+
+#ignore checkpoints 
+.ipynb_checkpoints/
+
+#ignoring directories that I don't want to publish to this repo
+pytorch_tutorials/

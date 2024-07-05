@@ -1,0 +1,45 @@
+---
+title: "making a good figure with a heatmap"
+output: html_notebook
+---
+
+
+```{r}
+data <- read.csv("./n2_n3_degFC1_Up_down.csv", header = TRUE)
+head(data)
+```
+```{R}
+dist_matrix <- dist(data)
+hc <- hclust(dist_matrix, method = "complete")
+```
+Note: this probably fucks up the analysis
+```{R}
+clusters <- cutree(hc, k = 5)
+```
+
+```{R}
+library(pheatmap)
+df_mat <- data.matrix(data[, grep("^p\\d+n\\d+$", colnames(data))])  # Select CPM columns
+rownames(df_mat) <- data$gene.ID
+hm <- pheatmap(df_mat,
+         scale = "row",
+         #cluster_rows = hc,
+         #annotation_col = clusters,
+         show_row_names = FALSE,
+         show_column_names = FALSE,
+         cluster_rows = TRUE,
+         cluster_columns = TRUE,
+         color = colorRampPalette(c("green", "white", "red"))(100))
+data.clust <- cbind(data, cluster = cutree(hm$gene.ID, k = 10))
+```
+
+
+The steps for the future:
+1 generate the heatmap without the rownames (make it look pretty)
+
+2) Extract the clusters like above / on stack overflow
+https://stackoverflow.com/questions/27820158/pheatmap-in-r-how-to-get-clusters
+
+3) count and graph in ggplot 
+
+4) GO of each cluster set
