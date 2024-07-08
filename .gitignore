@@ -1,5 +1,6 @@
 #ignore virtual environemnts
 labkernel/
+env/
 
 #ignore checkpoints 
 .ipynb_checkpoints/
