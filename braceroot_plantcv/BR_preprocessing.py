@@ -76,6 +76,8 @@ if not os.path.exists("output"):
 # Process each image
 for image_file in image_files:
     # Load the image
+    print("Processing " + image_file)
+    
     img = cv2.imread(image_file)
 
     out = isolate_brace_roots(img)
