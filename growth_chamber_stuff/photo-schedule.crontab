@@ -1,0 +1,3 @@
+# Standard Raspberry Pi 18-hour day photography schedule 
+# For the imaging hours 6am to midnight take images every 15 minutes 
+0,15,30,45 6-23 * * * /usr/bin/python /home/sparkslab/Desktop/local-folder/shutter_and_sync.py topview
