@@ -1,0 +1,6 @@
+#!/bin/bash 
+source /opt/sam2_env/bin/activate
+cd /
+jupyter notebook --no-browser --allow-root --port=8080
+
+
