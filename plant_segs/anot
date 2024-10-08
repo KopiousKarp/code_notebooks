@@ -1,0 +1,36 @@
+{
+  "classes": [
+    {
+      "name": "Marker",
+      "color": "#ff0000"
+    },
+    {
+      "name": "roots",
+      "color": "#00ff00"
+    },
+    {
+      "name": "stalks",
+      "color": "#0000ff"
+    }
+  ],
+  "images": [
+    {
+      "file_name": "7-25_37.jpg",
+      "width": 2048,
+      "height": 2448,
+      "is_multi_slice": false,
+      "annotations": {}
+    },
+    {
+      "file_name": "8-16_19.jpg",
+      "width": 1200,
+      "height": 1920,
+      "is_multi_slice": false,
+      "annotations": {}
+    }
+  ],
+  "image_paths": {
+    "7-25_37.jpg": "/work/images/7-25_37.jpg",
+    "8-16_19.jpg": "/work/images/8-16_19.jpg"
+  }
+}
