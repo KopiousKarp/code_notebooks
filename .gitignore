@@ -1,3 +1,6 @@
+#pictures don't belong on github
+*.png 
+*.jpg
 #ignore virtual environemnts
 labkernel/
 env/
