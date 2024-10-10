@@ -1,0 +1,26 @@
+Plot 35 (Orange), Sunny day with little clouds. Found out that a zoomed option frames the image with the plant better, and allows for the plant to be much closer in the image. Test using the zoom option going forward. 
+
+Specs:
+
+Images 152-159:
+-1/1600
+-ISO 100
+-16:9
+-36mp
+-30cm Distance
+
+Images 160-167:
+-1/1600
+-ISO 100
+-16:9
+-9mp (No zoom)
+-30cm Distance
+
+Images 168-175:
+-1/1600
+-ISO 100
+-16:9
+-9mp (Zoomed)
+-30cm Distance
+
+

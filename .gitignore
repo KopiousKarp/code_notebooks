@@ -1,10 +1,11 @@
 #pictures don't belong on github
 *.png 
 *.jpg
+*.dng
 #ignore virtual environemnts
 labkernel/
 env/
-
+*.html
 #ignore checkpoints 
 .ipynb_checkpoints/
 

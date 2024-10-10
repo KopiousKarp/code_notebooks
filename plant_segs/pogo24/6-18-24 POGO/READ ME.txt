@@ -1,0 +1,31 @@
+Plot 35 (Orange), Very Sunny day, no clouds. Testing used different aspect ratios (16:9 & 4:3) with each of their zoomed option. Found that 4:3 frames the image with the plant very well. 9mp zoomed on 16:9 and 12mp zoomed on 3:4. Found that 4:3, 9mp zoomed image options allows for the best image by framing it and more clear image than the 9mp zoomed option that is only available for the 16:9 ratio. Test using 4:3 12mp zoomed option from now on. 
+
+Specs:
+
+Images 176-183:
+-1/1600
+-ISO 100
+-16:9
+-9mp (zoomed)
+-30cm distance
+
+Images 184-191:
+-1/1600
+-ISO 100
+-4:3
+-12mp (Zoomed)
+-30cm Distance
+
+Images 192-199:
+-1/2000
+-ISO 100
+-16:9
+-9mp (Zoomed)
+-30cm Distance
+
+Images 200-207:
+-1/2000
+-ISO 100
+-4:3
+-12mp (Zoomed)
+-30cm Distance

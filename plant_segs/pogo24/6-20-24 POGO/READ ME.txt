@@ -1,0 +1,34 @@
+Plots 35 (Orange) & 36 (Yellow) POGO Images. Very sunny day, some clouds covering periodically. With 4:3, 9mp zoomed option, we tested different shutter speeds to see what works best in the light/shawdows. Anything below 1/1250 is too "bleached" of an image. While anything above 1/2500 is too dark. We found that images taken with 1/2000 can be too dark with shawdows near the braceroots, esepcailly when more shawdows are casted due to being below the canopy. Test using 1/1250 - 1/1600 from now on and determine what is best in shawdows as plants grow more. 
+
+Specs:
+				
+Images 208-224:
+- 1/1000
+- ISO 100
+- 4:3 
+- 12mp (zoomed)
+- 30cm distance
+
+Images 225-241: Decent brightness in shawdows. 
+- 1/1250
+- ISO 100
+- 4:3 
+- 12mp (zoomed)
+- 30cm distance
+
+Images 242-258: On darker side if shawdows are casted towards bottom of the plant
+- 1/1600
+- ISO 100
+- 4:3 
+- 12mp (zoomed)
+- 30cm distance
+
+Images 259-275: Kind of too dark near bottom of plant when shawdows are casted
+- 1/2000
+- ISO 100
+- 4:3
+- 12mp (Zoomed)
+- 30cm distance
+
+
+

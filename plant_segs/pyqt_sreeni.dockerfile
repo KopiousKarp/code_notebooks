@@ -70,8 +70,10 @@ RUN python3 -m venv /opt/sam2_env && \
     /opt/sam2_env/bin/pip3 install torch torchvision torchaudio \
     --index-url https://download.pytorch.org/whl/rocm6.1 && \
     /opt/sam2_env/bin/pip3 install virtualenv-clone    
-        
-RUN /opt/sam2_env/bin/pip3 install digitalsreeni-image-annotator
+
+RUN git clone https://github.com/KopiousKarp/digitalsreeni-image-annotator.git /opt/digitalsreeni-image-annotator
+
+RUN cd /opt/digitalsreeni-image-annotator/ && /opt/sam2_env/bin/pip3 install -e .
 
 RUN /opt/sam2_env/bin/pip3 uninstall -y opencv-python
 RUN /opt/sam2_env/bin/pip3 install opencv-python-headless
