@@ -12,6 +12,6 @@ docker run -it \
       -v ./:/work \
       -v /tmp/.X11-unix:/tmp/.X11-unix \
       -e DISPLAY=$DISPLAY \
-      sreeni:latest
+      sreeni:test
 
 

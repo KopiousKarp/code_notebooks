@@ -84,3 +84,7 @@ RUN apt-get install -y \
     libfreetype6 \
     libpng16-16 \
     ucf
+
+RUN git clone https://github.com/facebookresearch/segment-anything-2.git /opt/sam2 && \
+  cd /opt/sam2 && /opt/sam2_env/bin/pip install -e ".[demo]" && \
+  cd /opt/sam2/checkpoints && ./download_ckpts.sh

@@ -1,0 +1,15 @@
+{
+  "classes": [],
+  "images": [
+    {
+      "file_name": "8-16_19.jpg",
+      "width": 1200,
+      "height": 1920,
+      "is_multi_slice": false,
+      "annotations": {}
+    }
+  ],
+  "image_paths": {
+    "8-16_19.jpg": "/work/images/images/8-16_19.jpg"
+  }
+}
