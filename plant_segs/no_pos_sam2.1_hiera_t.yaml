@@ -101,7 +101,7 @@ model:
   # SAM heads
   iou_prediction_use_sigmoid: True
   # cross-attend to object pointers from other frames (based on SAM output tokens) in the encoder
-  use_obj_ptrs_in_encoder: true
+  use_obj_ptrs_in_encoder: false
   add_tpos_enc_to_obj_ptrs: false   #it has position, I'm removing it
   proj_tpos_enc_in_obj_ptrs: false  #it has position, I'm removing it
   use_signed_tpos_enc_to_obj_ptrs: false #it has position, I'm removing it
