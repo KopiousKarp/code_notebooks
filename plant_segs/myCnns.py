@@ -48,11 +48,12 @@ class UNet(nn.Module):
       x2 = self.encoder2(x1)  # Encoder Level 2
       x3 = self.bottleneck(x2)  # ADD: Bottleneck
       # Decoder Level 2 with skip connection
-      x4 = self.decoder2(torch.cat([x3, x2], dim=1))  # ADD: Concatenation for skip connection
+      x4 = self.decoder2(torch.cat([x3, x2], dim=0))  # ADD: Concatenation for skip connection
       # Decoder Level 1 with skip connection
-      x5 = self.decoder1(torch.cat([x4, x1], dim=1))  # ADD: Concatenation for skip connection
-
+      x5 = self.decoder1(torch.cat([x4, x1], dim=0))  # ADD: Concatenation for skip connection
+    #   print(x5.shape)  
       return F.softmax(x5, dim=1)  # Output
+    #   return x5
 
 
 # SegNet
