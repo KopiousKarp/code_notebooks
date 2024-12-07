@@ -2,6 +2,10 @@
 *.png 
 *.jpg
 *.dng
+
+#Data files are too large
+*.npy
+
 #ignore virtual environemnts
 labkernel/
 env/
