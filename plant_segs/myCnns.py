@@ -52,8 +52,8 @@ class UNet(nn.Module):
       # Decoder Level 1 with skip connection
       x5 = self.decoder1(torch.cat([x4, x1], dim=0))  # ADD: Concatenation for skip connection
     #   print(x5.shape)  
-      return F.softmax(x5, dim=1)  # Output
-    #   return x5
+    #   return F.softmax(x5, dim=0)  # Output
+      return x5
 
 
 # SegNet
@@ -124,6 +124,7 @@ class ResidualUNet(nn.Module):
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
         )
         self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.residual_conv1 = nn.Conv2d(in_channels, 64, kernel_size=1)
 
         # Residual Encoder Block 2
         self.encoder2 = nn.Sequential(
@@ -132,6 +133,7 @@ class ResidualUNet(nn.Module):
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
         )
         self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.residual_conv2 = nn.Conv2d(64, 128, kernel_size=1)
 
         # Bottleneck
         self.bottleneck = nn.Sequential(
@@ -139,6 +141,7 @@ class ResidualUNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
         )
+        self.residual_conv_bottleneck = nn.Conv2d(128, 128, kernel_size=1)
 
         # Residual Decoder Block 2
         self.decoder2 = nn.Sequential(
@@ -162,17 +165,17 @@ class ResidualUNet(nn.Module):
     def forward(self, x):
         # Encoder Level 1
         x1 = self.encoder1(x)
-        x1_res = x1 + x  # Residual connection
+        x1_res = x1 + self.residual_conv1(x)  # Residual connection
         x1_pooled = self.pool1(x1_res)
 
         # Encoder Level 2
         x2 = self.encoder2(x1_pooled)
-        x2_res = x2 + x1_pooled  # Residual connection
+        x2_res = x2 + self.residual_conv2(x1_pooled)  # Residual connection
         x2_pooled = self.pool2(x2_res)
 
         # Bottleneck
         x3 = self.bottleneck(x2_pooled)
-        x3_res = x3 + x2_pooled  # Residual connection
+        x3_res = x3 + self.residual_conv_bottleneck(x2_pooled)  # Residual connection
 
         # Decoder Level 2
         x4_up = self.upconv2(x3_res)
@@ -186,7 +189,8 @@ class ResidualUNet(nn.Module):
 
         # Final Output
         out = self.final_conv(x5_res)
-        return F.softmax(out, dim=1)
+        # return F.softmax(out, dim=1)
+        return out
 
 
 # U2-net   Note: the original paper used Dilations INSTEAD OF DOWNSAMPLING
