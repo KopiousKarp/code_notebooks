@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from myCnns import *
 torch.manual_seed(0)
 class CustomCocoDetection(CocoDetection):
-    def __init__(self, root, annFile, transform=None, num_classes=3):
+    def __init__(self, root, annFile, transform=None, num_classes=4):
         super(CustomCocoDetection, self).__init__(root, annFile, transform=transform)
         self.num_classes = num_classes
         # add a coco structure to create the mask properly
@@ -35,7 +35,7 @@ class CustomCocoDetection(CocoDetection):
             if category_id <= self.num_classes:  # Ensure the category is within the range
                 # Get segmentation data
                 ann2mask = self.coco.annToMask(annotation)
-                mask[category_id-1] += ann2mask*255 
+                mask[category_id] += ann2mask*255 
          # Convert the mask to a tensor
         mask = torch.tensor(mask)#.permute(2, 0, 1)  # Change to (num_classes, height, width)
         #TODO: make sure this code outputs mask to be a tensor of the same size and shape as img
@@ -44,12 +44,12 @@ class CustomCocoDetection(CocoDetection):
             img = self.transform(img)
         # Center crop img and mask
         
-        center_crop_size = 2440
-        _, img_height, img_width = img.shape
-        crop_top = (img_height - center_crop_size) // 2
-        crop_left = (img_width - center_crop_size) // 2
-        img = img[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
-        mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
+        # center_crop_size = 2440
+        # _, img_height, img_width = img.shape
+        # crop_top = (img_height - center_crop_size) // 2
+        # crop_left = (img_width - center_crop_size) // 2
+        # img = img[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
+        # mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
         
         return img, mask
 
@@ -61,7 +61,7 @@ dataset = CustomCocoDetection(
     root='./2024_annot/images',
     annFile='./2024_annot/2024_annotations.json',
     transform=transform,
-    num_classes=3)
+    num_classes=4)
 
 
 train_size = int(0.7 * len(dataset))
@@ -76,7 +76,7 @@ dataloader_val = DataLoader(dataset.val, batch_size=1, shuffle=False,collate_fn=
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print(f'Using {device}')
-for j in [SegNet, UNet, AttentionUNet, ResidualUNet]:
+for j in [UNet, SegNet, AttentionUNet, ResidualUNet]:
     model = j()
     model_name = f'{j.__name__}_exp_2024'
     print(f'Training {j.__name__}')
@@ -84,6 +84,7 @@ for j in [SegNet, UNet, AttentionUNet, ResidualUNet]:
     optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-5)
     # Define the training logic herusedse
     model.to(device) # uses memory
+    testp = True
     for epoch in range(100):  # example: train for 10 epochs
         epoch_loss = 0
         datacount = 0
@@ -91,14 +92,21 @@ for j in [SegNet, UNet, AttentionUNet, ResidualUNet]:
 
             datacount += len(inputs)
             #inputs is tuple with dimensions (batch, num_channels, height, width)
-            assert inputs[0].shape == labels[0].shape, f"Shape mismatch: inputs shape {inputs[0].shape}, labels shape {labels[0].shape}"
+            # assert inputs[0].shape == labels[0].shape, f"Shape mismatch: inputs shape {inputs[0].shape}, labels shape {labels[0].shape}"
             inputs = torch.cat(inputs, dim=1).to(device)
             labels = torch.cat(labels,dim=1).to(device)
-            
+            # print(f'labels {labels.shape} inputs {inputs.shape}') #pass
             optimizer.zero_grad()
             outputs = model(inputs)# throws error here
             
             labels = torch.argmax(labels, dim=0)
+            # print(f'labels {labels.shape} inputs {inputs.shape}')
+            # if testp:
+            #     torch.set_printoptions(threshold=float('inf'))
+            #     labels_t = labels.view(1, 1, *labels.shape).float()  # Reshape to (N, C, H, W)
+            #     resized_labels = F.interpolate(labels_t, size=(16, 16), mode='nearest').squeeze(0).squeeze(0)  # Interpolate and then remove the added dimensions
+            #     print(resized_labels)
+                # testp = False           
             if labels.dim() == 2:  # If no batch dimension, add one
                 labels = labels.unsqueeze(0)
             if outputs.dim() == 3:  # If no batch dimension, add one
