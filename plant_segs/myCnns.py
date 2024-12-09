@@ -5,7 +5,7 @@ import torch.nn.functional as F
 
 # U-net
 class UNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=1):
         super(UNet, self).__init__()
         self.encoder1 = nn.Sequential(
             nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
@@ -54,6 +54,29 @@ class UNet(nn.Module):
     #   print(x5.shape)  
     #   return F.softmax(x5, dim=0)  # Output
       return x5
+    
+    # def predict_mask(self,img,merge=True):
+    #     '''
+    #     img : numpy array 
+    #     merge : boolean
+    #         True : output is the original image with mask overlayed
+    #         False: output is soley the mask
+    #     '''
+    #     #convert img to tensor
+    #     if isinstance(img, torch.Tensor):
+    #         img_tensor = img
+    #     else:
+    #         img_tensor = torch.from_numpy(img).float()
+        
+    #     # run forward on img_tensor
+    #     mask_logits =
+    
+
+        # torch.set_printoptions(threshold=float('inf'))
+        # labels_t = mask_logits.view(1, 1, *mask_logits.shape).float()  # Reshape to (N, C, H, W)
+        # resized_labels = F.interpolate(labels_t, size=(16, 16), mode='nearest').squeeze(0).squeeze(0)  # Interpolate and then remove the added dimensions
+        # print(resized_labels)          
+         
 
 
 # SegNet
@@ -92,24 +115,24 @@ class SegNet(nn.Module):
             nn.Conv2d(64, out_channels, kernel_size=3, padding=1)
         )
 
-        def forward(self, x):
-          # Encoder Block 1
-          x1 = self.encoder1(x)
-          x1_pooled, indices1 = self.pool1(x1)  # ADD: Save pooling indices
+    def forward(self, x):
+        # Encoder Block 1
+        x1 = self.encoder1(x)
+        x1_pooled, indices1 = self.pool1(x1)  # ADD: Save pooling indices
 
-          # Encoder Block 2
-          x2 = self.encoder2(x1_pooled)
-          x2_pooled, indices2 = self.pool2(x2)  # ADD: Save pooling indices
+        # Encoder Block 2
+        x2 = self.encoder2(x1_pooled)
+        x2_pooled, indices2 = self.pool2(x2)  # ADD: Save pooling indices
 
-          # Decoder Block 2
-          x2_unpooled = self.unpool2(x2_pooled, indices2)  # ADD: Use pooling indices for unpooling
-          x2_decoded = self.decoder2(x2_unpooled)
+        # Decoder Block 2
+        x2_unpooled = self.unpool2(x2_pooled, indices2)  # ADD: Use pooling indices for unpooling
+        x2_decoded = self.decoder2(x2_unpooled)
 
-          # Decoder Block 1
-          x1_unpooled = self.unpool1(x2_decoded, indices1)  # ADD: Use pooling indices for unpooling
-          x1_decoded = self.decoder1(x1_unpooled)
+        # Decoder Block 1
+        x1_unpooled = self.unpool1(x2_decoded, indices1)  # ADD: Use pooling indices for unpooling
+        x1_decoded = self.decoder1(x1_unpooled)
 
-          return F.softmax(x1_decoded, dim=1)  # Final softmax activation for multi-class segmentation
+        return F.softmax(x1_decoded, dim=1)  # Final softmax activation for multi-class segmentation
 
 
 

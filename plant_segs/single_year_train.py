@@ -12,6 +12,8 @@ from PIL import Image, ImageDraw
 import numpy as np
 import torch.nn.functional as F
 from myCnns import *
+
+
 torch.manual_seed(0)
 class CustomCocoDetection(CocoDetection):
     def __init__(self, root, annFile, transform=None, num_classes=4):
@@ -30,26 +32,26 @@ class CustomCocoDetection(CocoDetection):
         
         # Parse annotations to draw masks
         for annotation in target:
-            category_id = annotation['category_id']
+            category_id = annotation['category_id'] # 1-3
             # print(category_id)
             if category_id <= self.num_classes:  # Ensure the category is within the range
                 # Get segmentation data
                 ann2mask = self.coco.annToMask(annotation)
                 mask[category_id] += ann2mask*255 
          # Convert the mask to a tensor
-        mask = torch.tensor(mask)#.permute(2, 0, 1)  # Change to (num_classes, height, width)
-        #TODO: make sure this code outputs mask to be a tensor of the same size and shape as img
+        mask = torch.tensor(mask)
+       
         # Apply transformations to the image if specified
         if self.transform:
             img = self.transform(img)
-        # Center crop img and mask
         
-        # center_crop_size = 2440
-        # _, img_height, img_width = img.shape
-        # crop_top = (img_height - center_crop_size) // 2
-        # crop_left = (img_width - center_crop_size) // 2
-        # img = img[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
-        # mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
+        # Center crop img and mask
+        center_crop_size = 2440
+        _, img_height, img_width = img.shape
+        crop_top = (img_height - center_crop_size) // 2
+        crop_left = (img_width - center_crop_size) // 2
+        img = img[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
+        mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
         
         return img, mask
 
@@ -74,56 +76,102 @@ dataloader_train = DataLoader(dataset.train, batch_size=1, shuffle=True,collate_
 dataloader_test = DataLoader(dataset.test, batch_size=1, shuffle=False,collate_fn=lambda batch: tuple(zip(*batch)))
 dataloader_val = DataLoader(dataset.val, batch_size=1, shuffle=False,collate_fn=lambda batch: tuple(zip(*batch)))
 
+# Calculate class weights for weighted cross entropy
+class_counts = torch.zeros(4)  # 4 classes including background
+total_pixels = 0
+
+for _, masks in dataloader_train:
+    masks = torch.cat(masks, dim=0)
+    # Count pixels for classes 1-3
+    for i in range(1, 4):
+        class_counts[i] += (masks[i] > 0).sum().item()
+    total_pixels += masks[0].numel()
+    # Class 0 (background) is all remaining pixels
+    class_counts[0] += total_pixels - sum(class_counts[1:])
+
+class_weights = 1.0 / (class_counts + 1e-8)  # add small epsilon to avoid division by zero
+class_weights = class_weights / class_weights.sum() * len(class_weights)  # normalize weights
+
+
+print("Class weights:", class_weights)
+
+
+
+
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+class_weights = class_weights.to(device)
 print(f'Using {device}')
 for j in [UNet, SegNet, AttentionUNet, ResidualUNet]:
     model = j()
     model_name = f'{j.__name__}_exp_2024'
     print(f'Training {j.__name__}')
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=1e-5)
-    # Define the training logic herusedse
+    criterion = nn.CrossEntropyLoss(weight=class_weights)
+    optimizer = optim.Adam(model.parameters(), lr=0.001, weight_decay=1e-5)
+    # Define the training logic 
     model.to(device) # uses memory
-    testp = True
+    
+    
     for epoch in range(100):  # example: train for 10 epochs
-        epoch_loss = 0
-        datacount = 0
-        for inputs, labels in tqdm(dataloader_train):
+        testp = False
+        
+        for dataloader in [dataloader_train, dataloader_test]:
+            epoch_loss = 0
+            datacount = 0
+            if dataloader == dataloader_train:
+                model.train()
+                train_flag = 1
+            else:
+                model.eval()
+                train_flag= 0
+            
+            for inputs, labels in tqdm(dataloader):
+                
+                datacount += len(inputs)
+                inputs = torch.cat(inputs, dim=0).to(device)
+                labels = torch.cat(labels,dim=0).to(device)
 
-            datacount += len(inputs)
-            #inputs is tuple with dimensions (batch, num_channels, height, width)
-            # assert inputs[0].shape == labels[0].shape, f"Shape mismatch: inputs shape {inputs[0].shape}, labels shape {labels[0].shape}"
-            inputs = torch.cat(inputs, dim=1).to(device)
-            labels = torch.cat(labels,dim=1).to(device)
-            # print(f'labels {labels.shape} inputs {inputs.shape}') #pass
-            optimizer.zero_grad()
-            outputs = model(inputs)# throws error here
+                # print(f'labels {labels.shape} inputs {inputs.shape}') #pass
+                if train_flag:
+                    torch.set_grad_enabled(True)
+                    optimizer.zero_grad()
+                else:
+                    torch.set_grad_enabled(False)
+                outputs = model(inputs)# throws error here
+                # model.predict_mask(inputs)        
+                labels = torch.argmax(labels, dim=0)
+                # outputs = torch.argmax(outputs,dim=0)
+                # print(f'labels {labels.shape} inputs {inputs.shape}')
+                if testp:
+                    torch.set_printoptions(threshold=float('inf'))
+                    labels_t = labels.view(1, 1, *labels.shape).float()  # Reshape to (N, C, H, W)
+                    resized_labels = F.interpolate(labels_t, size=(8, 8), mode='nearest').squeeze(0).squeeze(0)  # Interpolate and then remove the added dimensions
+                    print(resized_labels)
+                    outputs_t = torch.argmax(outputs,dim=0)
+                    outputs_t = outputs.view(1, 1, *outputs.shape).float()  # Reshape outputs similarly
+                    resized_outputs = F.interpolate(outputs_t.squeeze(0), size=(8, 8), mode='nearest').squeeze(0).squeeze(0)  # Interpolate outputs
+                    print(resized_outputs)
+                    testp = False           
+                
+                if labels.dim() == 2:  # If no batch dimension, add one
+                    labels = labels.unsqueeze(0)
+                if outputs.dim() == 2:
+                    outputs = outputs.unsqueeze(0)
             
-            labels = torch.argmax(labels, dim=0)
-            # print(f'labels {labels.shape} inputs {inputs.shape}')
-            # if testp:
-            #     torch.set_printoptions(threshold=float('inf'))
-            #     labels_t = labels.view(1, 1, *labels.shape).float()  # Reshape to (N, C, H, W)
-            #     resized_labels = F.interpolate(labels_t, size=(16, 16), mode='nearest').squeeze(0).squeeze(0)  # Interpolate and then remove the added dimensions
-            #     print(resized_labels)
-                # testp = False           
-            if labels.dim() == 2:  # If no batch dimension, add one
-                labels = labels.unsqueeze(0)
-            if outputs.dim() == 3:  # If no batch dimension, add one
-                outputs = outputs.unsqueeze(0)
+                
+                assert labels.shape == outputs.shape, f"Shape mismatch: labels shape {labels.shape}, outputs shape {outputs.shape}"
             
+                loss = criterion(outputs, labels.float())
+                epoch_loss += loss.item()
+                if train_flag:
+                    loss.backward()
+                    optimizer.step()
             
-            loss = criterion(outputs, labels)
-            epoch_loss += loss.item()
-            loss.backward()
-            optimizer.step()
-        if epoch == 9 or epoch == 99:
-            outputs = F.softmax(outputs, dim=1)*255
-            transforms.ToPILImage()(inputs.cpu()).save(f'input_epoch{epoch}.png')
-            # transforms.ToPILImage()(labels.cpu().to(torch.uint8)).save(f'label_epoch{epoch}.png')
-            transforms.ToPILImage()(outputs[0].cpu()).save(f'output_epoch{epoch}.png')
-        print(f'epoch {epoch} loss = {epoch_loss/datacount}')
-        print(f'Model memory usage: {torch.cuda.memory_allocated(device) / (1024 ** 3):.2f} GB')
+            if train_flag:
+                print(f'training epoch {epoch} loss = {epoch_loss/datacount}')
+            else:
+                print(f'Testing epoch {epoch} loss = {epoch_loss/datacount}')
+            # print(f'Model memory usage: {torch.cuda.memory_allocated(device) / (1024 ** 3):.2f} GB')
     # Save the trained model here
     torch.save(model.state_dict(), f'{model_name}.pth')
 
