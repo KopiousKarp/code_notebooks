@@ -5,39 +5,41 @@ import torch.nn.functional as F
 
 # U-net
 class UNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=1):
+    def __init__(self, in_channels=3, out_channels=4):
         super(UNet, self).__init__()
+        self.k = 7
+        self.p = 3
         self.encoder1 = nn.Sequential(
-            nn.Conv2d(in_channels, 64, kernel_size=3, padding=1),
+            nn.Conv2d(in_channels, 64, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.encoder2 = nn.Sequential(  
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
+            nn.Conv2d(64, 128, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.Conv2d(128, 128, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
             nn.MaxPool2d(kernel_size=2, stride=2)
         )
         self.bottleneck = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size=3, padding=1),
+            nn.Conv2d(128, 256, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
-            nn.Conv2d(256, 256, kernel_size=3, padding=1),
+            nn.Conv2d(256, 256, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True)
         )
         self.decoder2 = nn.Sequential(  
-            nn.Conv2d(256 + 128, 128, kernel_size=3, padding=1), 
+            nn.Conv2d(256 + 128, 128, kernel_size=self.k, padding=self.p), 
             nn.ReLU(inplace=True),
-            nn.Conv2d(128, 128, kernel_size=3, padding=1),
+            nn.Conv2d(128, 128, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(128, 128, kernel_size=2, stride=2)
         )
         self.decoder1 = nn.Sequential(
-            nn.Conv2d(128 + 64, 64, kernel_size=3, padding=1),  # ADD: Skip connection from encoder1
+            nn.Conv2d(128 + 64, 64, kernel_size=self.k, padding=self.p),  # ADD: Skip connection from encoder1
             nn.ReLU(inplace=True),
-            nn.Conv2d(64, 64, kernel_size=3, padding=1),
+            nn.Conv2d(64, 64, kernel_size=self.k, padding=self.p),
             nn.ReLU(inplace=True),
             nn.ConvTranspose2d(64, 64, kernel_size=2, stride=2),
             nn.Conv2d(64, out_channels, kernel_size=1)
@@ -81,7 +83,7 @@ class UNet(nn.Module):
 
 # SegNet
 class SegNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=4):
         super(SegNet, self).__init__()
         # Encoder Block 1
         self.encoder1 = nn.Sequential(
@@ -132,13 +134,13 @@ class SegNet(nn.Module):
         x1_unpooled = self.unpool1(x2_decoded, indices1)  # ADD: Use pooling indices for unpooling
         x1_decoded = self.decoder1(x1_unpooled)
 
-        return F.softmax(x1_decoded, dim=1)  # Final softmax activation for multi-class segmentation
-
+        # return F.softmax(x1_decoded, dim=1)  # Final softmax activation for multi-class segmentation
+        return x1_decoded
 
 
 # Residual U-net
 class ResidualUNet(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=4):
         super(ResidualUNet, self).__init__()
         # Residual Encoder Block 1
         self.encoder1 = nn.Sequential(
@@ -164,23 +166,23 @@ class ResidualUNet(nn.Module):
             nn.ReLU(inplace=True),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
         )
-        self.residual_conv_bottleneck = nn.Conv2d(128, 128, kernel_size=1)
+        self.residual_conv_bottleneck = nn.Conv2d(128, 256, kernel_size=1)
 
         # Residual Decoder Block 2
         self.decoder2 = nn.Sequential(
-            nn.Conv2d(256 + 128, 128, kernel_size=3, padding=1),  # Skip connection from encoder2
+            nn.Conv2d(256, 128, kernel_size=3, padding=1),  # Skip connection from encoder2
             nn.ReLU(inplace=True),
             nn.Conv2d(128, 128, kernel_size=3, padding=1),
         )
-        self.upconv2 = nn.ConvTranspose2d(128, 128, kernel_size=2, stride=2)
+        self.upconv2 = nn.ConvTranspose2d(256, 128, kernel_size=2, stride=2)
 
         # Residual Decoder Block 1
         self.decoder1 = nn.Sequential(
-            nn.Conv2d(128 + 64, 64, kernel_size=3, padding=1),  # Skip connection from encoder1
+            nn.Conv2d(128, 64, kernel_size=3, padding=1),  # Skip connection from encoder1
             nn.ReLU(inplace=True),
             nn.Conv2d(64, 64, kernel_size=3, padding=1),
         )
-        self.upconv1 = nn.ConvTranspose2d(64, 64, kernel_size=2, stride=2)
+        self.upconv1 = nn.ConvTranspose2d(128, 64, kernel_size=2, stride=2)
 
         # Final Output Convolution
         self.final_conv = nn.Conv2d(64, out_channels, kernel_size=1)
@@ -202,12 +204,12 @@ class ResidualUNet(nn.Module):
 
         # Decoder Level 2
         x4_up = self.upconv2(x3_res)
-        x4 = self.decoder2(torch.cat([x4_up, x2_res], dim=1))  # Skip connection
+        x4 = self.decoder2(torch.cat([x4_up, x2_res], dim=0))  # Skip connection
         x4_res = x4 + x4_up  # Residual connection
 
         # Decoder Level 1
         x5_up = self.upconv1(x4_res)
-        x5 = self.decoder1(torch.cat([x5_up, x1_res], dim=1))  # Skip connection
+        x5 = self.decoder1(torch.cat([x5_up, x1_res], dim=0))  # Skip connection
         x5_res = x5 + x5_up  # Residual connection
 
         # Final Output
@@ -218,7 +220,7 @@ class ResidualUNet(nn.Module):
 
 # U2-net   Note: the original paper used Dilations INSTEAD OF DOWNSAMPLING
 class U2Net(nn.Module):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=4):
         super(U2Net, self).__init__()
         # Nested U-Nets as Residual U-Blocks
         self.encoder1 = UNet(in_channels, 64)  # First nested U-Net
@@ -243,35 +245,57 @@ class U2Net(nn.Module):
         x3 = self.bottleneck(x2)
 
         # Decoder with skip connections
-        x4 = self.decoder2(torch.cat([x3, x2], dim=1))  # Skip connection from encoder2
-        x5 = self.decoder1(torch.cat([x4, x1], dim=1))  # Skip connection from encoder1
+        x4 = self.decoder2(torch.cat([x3, x2], dim=0))  # Skip connection from encoder2
+        x5 = self.decoder1(torch.cat([x4, x1], dim=0))  # Skip connection from encoder1
 
         # Final output
         output = self.final(x5)
-        return F.softmax(output, dim=1)
+        # return F.softmax(output, dim=1)
+        return output
+
+class Attention_block(nn.Module):
+    def __init__(self,F_g,F_l,F_int):
+        super(Attention_block,self).__init__()
+        self.W_g = nn.Sequential(
+            nn.Conv2d(F_g, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+            )
+        
+        self.W_x = nn.Sequential(
+            nn.Conv2d(F_l, F_int, kernel_size=1,stride=1,padding=0,bias=True),
+        )
+
+        self.psi = nn.Sequential(
+            nn.Conv2d(F_int, 1, kernel_size=1,stride=1,padding=0,bias=True),
+            nn.Sigmoid()
+        )
+        
+        self.relu = nn.ReLU(inplace=True)
+        
+    def forward(self,g,x):
+        g1 = self.W_g(g)
+        x1 = self.W_x(x)
+        psi = self.relu(g1+x1)
+        psi = self.psi(psi)
 
 
 # Attention U-net
 class AttentionUNet(UNet):
-    def __init__(self, in_channels=3, out_channels=3):
+    def __init__(self, in_channels=3, out_channels=4):
         super(AttentionUNet, self).__init__()
         
-    def attention_block(g, x, inter_channels):
-        theta_x = nn.Conv2d(x.size(1), inter_channels, kernel_size=2, stride=2, padding=0)(x)
-        phi_g = nn.Conv2d(g.size(1), inter_channels, kernel_size=1, stride=1, padding=0)(g)
-        f = F.relu(theta_x + phi_g, inplace=True)
-        psi_f = nn.Conv2d(inter_channels, 1, kernel_size=1, stride=1, padding=0)(f)
-        rate = torch.sigmoid(psi_f)
-        return x * rate
+        self.att2 = Attention_block(F_g=256,F_l=256,F_int=128)
+        self.att1 = Attention_block(F_g=128,F_l=128,F_int=64)
         
         
     def forward(self, x):
         x1 = self.encoder1(x)  # Encoder Level 1
         x2 = self.encoder2(x1)  # Encoder Level 2
         x3 = self.bottleneck(x2)  # Bottleneck
-        
+        print(x3.shape)
         # Apply attention block to the skip connection before passing to decoder
-        x4 = self.decoder2(torch.cat([x3, self.attention_block(x2, x3, 128)], dim=1))  # Decoder Level 2 with attention
-        x5 = self.decoder1(torch.cat([x4, self.attention_block(x1, x4, 64)], dim=1))  # Decoder Level 1 with attention
+        a2 = self.att2(g=x2,x=x3)
+        x4 = self.decoder2(torch.cat([x3, a2], dim=1))  # Decoder Level 2 with attention
+        x5 = self.decoder1(torch.cat([x4, self.att1(g=x4,x=x1)], dim=1))  # Decoder Level 1 with attention
 
-        return F.softmax(x5, dim=1)  # Output
+        # return F.softmax(x5, dim=1)  # Output
+        return(x5)
