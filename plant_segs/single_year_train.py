@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 import torch.nn.functional as F
 from myCnns import *
+import json
 
 
 torch.manual_seed(0)
@@ -127,6 +128,7 @@ print("Class weights:", class_weights)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 class_weights = class_weights.to(device)
 print(f'Using {device}')
+results_dict = {}
 for j in [U2Net, ResidualUNet, SegNet, UNet]:
     model = j()
     model_name = f'{j.__name__}_exp_2024'
@@ -135,8 +137,10 @@ for j in [U2Net, ResidualUNet, SegNet, UNet]:
     optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=1e-5)
     # Define the training logic 
     model.to(device) # uses memory
-    
-    
+    results_dict[model_name] = {
+        'train_losses': [],
+        'test_losses': []
+    }
     for epoch in range(100):  # example: train for 10 epochs
                
         for dataloader in [dataloader_train, dataloader_test]:
@@ -180,11 +184,25 @@ for j in [U2Net, ResidualUNet, SegNet, UNet]:
             
             if train_flag:
                 print(f'training epoch {epoch} loss = {epoch_loss/datacount}')
+                results_dict[model_name]['train_losses'].append(epoch_loss/datacount)
+
             else:
                 print(f'Testing epoch {epoch} loss = {epoch_loss/datacount}')
+                results_dict[model_name]['test_losses'].append(epoch_loss/datacount)
             # print(f'Model memory usage: {torch.cuda.memory_allocated(device) / (1024 ** 3):.2f} GB')
     # Save the trained model here
     torch.save(model.state_dict(), f'{model_name}.pth')
+    # Convert tensors to Python floats for JSON serialization
+serializable_results = {}
+for model_name, results in results_dict.items():
+    serializable_results[model_name] = {
+        'train_losses': [float(loss) for loss in results['train_losses']],
+        'test_losses': [float(loss) for loss in results['test_losses']]
+    }
+
+# Save to JSON file
+with open('training_results.json', 'w') as f:
+    json.dump(serializable_results, f, indent=4)
 
 
 
