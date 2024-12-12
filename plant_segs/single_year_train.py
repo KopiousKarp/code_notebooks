@@ -49,13 +49,15 @@ class CustomCocoDetection(CocoDetection):
             img = self.transform(img)
             # mask = self.transform(mask)
         # Center crop img and mask
-        center_crop_size = 1024
+        center_crop_size = 2048
         _, img_height, img_width = img.shape
         crop_top = (img_height - center_crop_size) // 2
         crop_left = (img_width - center_crop_size) // 2
         img = img[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
         mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
-        
+        # Resize both image and mask to 256x256
+        img = torch.nn.functional.interpolate(img.unsqueeze(0), size=(256, 256), mode='bilinear', align_corners=False).squeeze(0)
+        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), size=(256, 256), mode='nearest').squeeze(0)
         return img, mask
 
 transform = v2.Compose([
@@ -175,6 +177,7 @@ for j in [U2Net, ResidualUNet, SegNet, UNet]:
             
                 
                 assert labels.shape == outputs.shape, f"Shape mismatch: labels shape {labels.shape}, outputs shape {outputs.shape}"
+                assert outputs.dtype == float, f"Output tensor is not float: {outputs.dtype}"
                 # print(f"Maximum output value: {outputs.max()}")
                 loss = criterion(outputs, labels.float())
                 epoch_loss += loss.item()
