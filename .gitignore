@@ -2,7 +2,7 @@
 *.png 
 *.jpg
 *.dng
-
+*.pth
 #Data files are too large
 *.npy
 
@@ -15,4 +15,4 @@ env/
 
 #ignoring directories that I don't want to publish to this repo
 pytorch_tutorials/
-*.pth
+
