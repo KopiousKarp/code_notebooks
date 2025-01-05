@@ -60,7 +60,7 @@ class CustomCocoDetection(CocoDetection):
         mask = mask[:, crop_top:crop_top + center_crop_size, crop_left:crop_left + center_crop_size]
         # Resize both image and mask to 256x256
         img = torch.nn.functional.interpolate(img.unsqueeze(0), size=(256, 256), mode='bilinear', align_corners=False).squeeze(0)
-        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), size=(256, 256), mode='nearest').squeeze(0)
+        mask = torch.nn.functional.interpolate(mask.unsqueeze(0), size=(256, 256), mode='bilinear').squeeze(0)
 
         return img, mask
 
@@ -93,7 +93,6 @@ transform = v2.Compose([
     v2.Normalize(mean=mean, std=std),
     # v2.RandomHorizontalFlip(p=1),
     # v2.RandomPerspective(distortion_scale=0.5, p=0.5),
-    # v2.RandomVerticalFlip(p=0.5),
     # v2.GaussianBlur(7,sigma=(0.1, 2.0)) 
 ])
 
@@ -186,7 +185,7 @@ for j in [U2Net, ResidualUNet, SegNet, UNet]:
                 
                 assert labels.shape == outputs.shape, f"Shape mismatch: labels shape {labels.shape}, outputs shape {outputs.shape}"
 
-                assert outputs.dtype == float, f"Output tensor is not float: {outputs.dtype}"
+                # assert outputs.dtype == float, f"Output tensor is not float: {outputs.dtype}"
 
                 # print(f"Maximum output value: {outputs.max()}")
                 loss = criterion(outputs, labels.float())
