@@ -5,7 +5,7 @@
 *.pth
 #Data files are too large
 *.npy
-
+*.zip
 #ignore virtual environemnts
 labkernel/
 env/
