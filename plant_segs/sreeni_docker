@@ -10,6 +10,7 @@ docker run -it \
       --ipc=host \
       --shm-size 8G \
       -v ./:/work \
+      -v /media:/media \
       -v /tmp/.X11-unix:/tmp/.X11-unix \
       -e DISPLAY=$DISPLAY \
       sreeni:test

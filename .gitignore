@@ -3,9 +3,12 @@
 *.jpg
 *.dng
 *.pth
+*.jpeg
+*.jpeg*
 #Data files are too large
 *.npy
 *.zip
+*.pyc
 #ignore virtual environemnts
 labkernel/
 env/
