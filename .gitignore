@@ -5,6 +5,7 @@
 *.pth
 *.jpeg
 *.jpeg*
+*.mp4
 #Data files are too large
 *.npy
 *.zip
