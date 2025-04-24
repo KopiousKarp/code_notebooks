@@ -11,7 +11,7 @@
 # 'docker run -it --rm -v [host/directory]:[container/directory]:ro <user-name>/<project-name>'.
 
 FROM ubuntu:20.04
-LABEL maintainer=dl.mlsedevops@amd.com
+LABEL maintainer=jcristia@udel.edu
 
 # Initialize the image
 # Modify to pre-install dev tools and ROCm packages
@@ -121,9 +121,9 @@ RUN python3.10 -m venv /opt/sam2_env && \
 
 
 # Finish the SAM2 installation
-# RUN git clone https://github.com/facebookresearch/segment-anything-2.git /opt/sam2 && \
-#     cd /opt/sam2 && /opt/sam2_env/bin/pip install -e ".[demo]" && \
-#     cd /opt/sam2/checkpoints && ./download_ckpts.sh
+RUN git clone https://github.com/facebookresearch/segment-anything-2.git /opt/sam2 && \
+    cd /opt/sam2 && /opt/sam2_env/bin/pip install -e ".[demo]" && \
+    cd /opt/sam2/checkpoints && ./download_ckpts.sh
 RUN /opt/sam2_env/bin/pip install digitalsreeni-image-annotator
 
 # This is meant to be used as an interactive developer container

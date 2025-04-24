@@ -54,7 +54,7 @@ def process_with_sam2(coco_root, coco_api, sam2_checkpoint, model_cfg, device="c
         Dictionary mapping frame indices to object masks
     """
     # Build SAM2 video predictor
-    predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device="cpu")
+    predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
     
     # NOT SURE I NEED THIS
     # images = coco_api.loadImgs(img_ids)
@@ -149,7 +149,7 @@ if __name__ == "__main__":
                         help='Path to SAM2 checkpoint file')
     parser.add_argument('--model_cfg', type=str, default="configs/sam2.1/sam2.1_hiera_t.yaml", 
                         help='SAM2 model configuration file')
-    parser.add_argument('--device', type=str, default="cuda", help='Device to run inference on')
+    parser.add_argument('--device', type=str, default="cpu", help='Device to run inference on')
     
     args = parser.parse_args()
     

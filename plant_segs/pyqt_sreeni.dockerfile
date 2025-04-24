@@ -67,7 +67,7 @@ RUN apt-get update && apt-get install -y \
     libsm6 
 
 RUN python3 -m venv /opt/sam2_env && \
-    /opt/sam2_env/bin/pip3 install torch torchvision torchaudio \
+    /opt/sam2_env/bin/pip3 install torch==2.5.0 torchvision torchaudio \
     --index-url https://download.pytorch.org/whl/rocm6.1 && \
     /opt/sam2_env/bin/pip3 install virtualenv-clone    
 
@@ -76,7 +76,7 @@ RUN git clone https://github.com/KopiousKarp/digitalsreeni-image-annotator.git /
 RUN cd /opt/digitalsreeni-image-annotator/ && /opt/sam2_env/bin/pip3 install -e .
 
 RUN /opt/sam2_env/bin/pip3 uninstall -y opencv-python
-RUN /opt/sam2_env/bin/pip3 install opencv-python-headless
+RUN /opt/sam2_env/bin/pip3 install opencv-python-headless hydra-core>=1.3.2 iopath>=0.1.10 pillow>=9.4.0
 RUN apt-get install -y \
     fontconfig-config \
     fonts-dejavu-core \
@@ -86,5 +86,19 @@ RUN apt-get install -y \
     ucf
 
 RUN git clone https://github.com/facebookresearch/segment-anything-2.git /opt/sam2 && \
-  cd /opt/sam2 && /opt/sam2_env/bin/pip install -e ".[demo]" && \
+  cd /opt/sam2 && /opt/sam2_env/bin/pip install --no-deps -e ".[demo]" && \
   cd /opt/sam2/checkpoints && ./download_ckpts.sh
+
+
+RUN /opt/sam2_env/bin/pip3 install \
+    matplotlib \
+    pycocotools \
+    scikit-learn \
+    jupyter \
+    segmentation-models-pytorch
+  #for some reason this didn't quite work
+  #Missing software:
+    # jupyter 
+    # matplotlib
+    # pycocotools
+    # scikit-learn

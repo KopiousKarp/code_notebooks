@@ -1,0 +1,57 @@
+\chapter{Related Works}
+% Goal : 5-10 pages
+\section{A Survey of Modern Image Segmentation}
+\subsection{CNN's VS ViT's (unfinished)}
+
+Image segmentation has been revolutionized by the invention of Vision Transformers (ViTs)\cite{dosovitskiy2020image}, which are both performant and efficient in many computer vision tasks. They operate by dividing an input image into a grid of smaller patches, tranforming each patch as a token, similar to how words in a sentence are treated in Natural language processing. Each patch is then linearly embedded into a vector, which is combined with positional embeddings to retain spatial information. These vectors are fed into a transformer encoder, which consists of multiple layers of self-attention mechanisms. The self-attention mechanism allows the model to learn long-range dependencies between the patches, effectively capturing the global context of the image. This approach contrasts with traditional convolutional neural networks (CNNs), which rely on local receptive fields and hierarchical feature extraction. Vision Transformers have demonstrated superior performance in various image recognition tasks, although they typically require larger datasets and more computational resources for training compared to CNNs. \cite{Park22} 
+
+%My hatred of this paragraph grows with every revisit (iteration count: 3) 
+Similarly, masked autoencoders take a generative approach to image processing, learning, through regenerating artificially masked portions of images\cite{he2022masked} Building upon this, multi-head self-attention (MSA) mechanisms are inherently less susceptible to high-frequency noise in images. In contrast, convolutional networks (CNN's) exhibit the opposite behavior, making the two architectures complementary. MSAs act as low-pass filters, while CNN's function as high-pass filters.\cite{AlterNet}
+
+\subsection{Foundational Models (unfinished)}
+ The generalization potential of the transformer architecture lead to the development of large foundational models like Segment Anything (SAM) and Segment Anything 2 (SAM2) by Facebook AI Research. SAM utilizes a masked autoencoder to create an embedding of an input image, which can be prompted in various ways, such as singular point coordinates, bounding boxes, and even natural language.\cite{Kirillov2023-ok}  With just a few point prompts, SAM can generate masks that are significantly more accurate and detailed than those produced by current models like the U-Net from RootPainter.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\linewidth]{Images/SAM2_braceroots.png}
+    \caption{SAM2 mask predictor given 4 single-point prompts}
+    \label{fig:SAM2_BR}
+\end{figure}
+
+Foundational models, such as large language models and vision transformers, have revolutionized the field of artificial intelligence by providing a robust base for a wide range of applications. These models are pre-trained on vast amounts of data, and by fine-tuning these models for specific tasks, developers can create highly specialized applications with relatively little additional data.  This versatility has led to advancements in natural language processing, computer vision, and in the plant science community, has enabled a renaissance in annotating and publishing new datasets.\cite{plantScienceAnnRev24}
+
+\subsection{Applications of SAM2 (unfinished)}
+Others have also used SAM along with prompt engineering to tackle broad and complex segmentation tasks like this one. One such project used SAM to generate psuedo-labels which then combined with an edge driven segmentation model was able to create detailed and accurate segmentation of buildings in satellite images.\cite{rs16030526}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Images/Buildings_psuedo_labeling_diagram.png}
+    \caption{The graphical abstract of \cite{rs16030526} showing a framework for segmenting overhead images of buildings}
+    \label{fig:Buildings}
+\end{figure}
+
+% FS_MedSAM2
+Biomedical sciences have also taken to using these foundational models for segmentation tasks. A category of these tasks is Few Shot Medical Image Segmentation (FSMIS) in which annotation data is limited. The goal of this task is to annotate a very small amount of data for semi-supervised learning. \cite{bai2024fsmedsam2exploringpotentialsam2} An effective strategy for this task is to optimize the memory attention blocks of SAM2, originally implemented to allow for uninterrupted segmentation of video. By creating a memory bank of prompted segmentations, FS\_MedSAM2 is able to segment CT scans of human torsos throughout the entire scan with only a few prompts. \cite{bai2024fsmedsam2exploringpotentialsam2}
+
+%discuss the adapting sam paper. the enemy of the black background
+\cite{Zhang2024}
+The integration of foundation models into plant phenotyping workflows has emerged as a promising paradigm. These models have been pre-trained on expansive, diverse datasets, allowing them to generalize across a wide range of visual tasks with minimal to no additional supervision. When coupled with multimodal frameworks like Explainable Contrastive Language–Image Pretraining (ECLIP), they demonstrate the ability to align semantic understanding across textual and visual domains, enhancing their utility in tasks such as object segmentation, classification, and description in complex biological imagery \cite{Zhang2024}.
+
+However, a critical limitation arises when applying these models to niche or domain-specific data, such as rare or poorly characterized plant phenotypes. Despite their generalization capabilities, foundation models often underperform on out-of-distribution data, particularly in settings involving unique plant morphologies, subtle trait variations, or understudied species. This gap in performance underscores the need for a more robust connection between the periphery of biological imaging data—where novel or underrepresented phenotypes reside—and the core training distributions of foundational models. Without such a bridge, these systems risk replicating the same biases and blind spots that hinder traditional approaches.
+
+Recent work by Zhang et al. \cite{Zhang2024} addresses this issue through a hybrid strategy that daisy-chains the strengths of foundational segmentation models with domain-adaptive modules. Their proposed framework employs SAM for initial object segmentation and incorporates ECLIP to provide semantic guidance, thereby enhancing interpretability and adaptability. Notably, the authors introduce a B-spline-based skeletonization technique for more accurate quantification of plant structures, which is particularly effective in estimating shape-based phenotypic traits. This method achieves high precision (mean absolute error below 0.05 in most test cases) without the need for task-specific training data or fine-tuning—demonstrating that such hybrid approaches can be both practical and scalable for real-world phenotyping applications.
+
+This chapter explores the broader implications of integrating foundational vision-language models into plant science, with a focus on their capacity to generalize, adapt, and contribute meaningfully to high-throughput phenotyping. It further discusses the importance of developing methodologies that extend model applicability to novel data domains, including techniques for data bridging, skeleton-based trait extraction, and interpretable AI. Ultimately, this line of inquiry seeks to advance a new generation of phenotyping tools capable of supporting diverse agricultural systems, particularly those involving non-model crops and understudied traits.
+
+
+
+% \begin{questionbox}
+% I'm beginning to learn more about attention, and its applications. 
+% Are "multi-attention heads" and their properties directly transferable to ViT's and even further into models like SAM2?
+
+% The answer is yes
+
+% I started looking over the slides from ELEG815, reviewing the slides for transformers and attention. I was surprised to see that attention, from a simplistic viewpoint is cosine similarity wrapped in softmax. So in principle, the act of using cosine similarity to filter images, is just the act of applying attention throughout the entire image set. 
+
+% \end{questionbox}
+\section{A Survey on Agricultural Robotics}
+%litterally copy from the matrix document 

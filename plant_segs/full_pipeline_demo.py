@@ -132,7 +132,7 @@ def predict_filepaths(
                     print(measurements)
                     
                     # Retrieve frame from plot_measurements and save to video
-                    frame = plot_measurements(img_t, bbox_points, measurements, return_image=True)
+                    frame = plot_measurements(img_t, bbox_points, measurements,mask, return_image=True)
                     video.append(frame)
                 print(f"index: {index} Predicted {path} as {pred}")    
             
@@ -171,7 +171,7 @@ def predict_filepaths(
 
 
 predict_filepaths(
-    "/work/pogo24/",
+    "/work/2023_annot/",
     "UNET",
     "logistic_regression", 
     model,           # trained UNET (or similar) model

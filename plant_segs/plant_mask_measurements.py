@@ -178,38 +178,59 @@ def measure_root_mask(root_mask, stalk_bbox):
 
     return measurements
 
-def plot_measurements(image, bbox, measurements, return_image=False):
+def plot_measurements(image, bbox, measurements, mask=None, return_image=False):
     highest_emergence = measurements.get('highest_emergence')
     spread_center = measurements.get('spread_center')
-    # Create the figure and plot the mask background
-    fig = plt.figure(figsize=(8, 8))
-    plt.imshow(image.permute(1,2,0), cmap='gray')
-    plt.title("Overlay: BBox, Highest Emergence, and Connection Line")
-    plt.axis('off')
+    
+    # Create a figure with two rows - top for measurements, bottom for masks
+    fig = plt.figure(figsize=(15, 12))
+    
+    # Top plot: measurements overlay
+    ax1 = plt.subplot(2, 1, 1)
+    ax1.imshow(image.permute(1, 2, 0), cmap='gray')
+    ax1.set_title("Overlay: BBox, Highest Emergence, and Connection Line")
+    ax1.axis('off')
 
     # Plot the bounding box by closing the polygon (bbox is numpy array of shape (4,2))
     bbox_closed = np.vstack([bbox, bbox[0]])
-    plt.plot(bbox_closed[:, 0], bbox_closed[:, 1], color='cyan', linewidth=2, label='BBox')
+    ax1.plot(bbox_closed[:, 0], bbox_closed[:, 1], color='cyan', linewidth=2, label='BBox')
 
     # Plot highest emergence if it exists
     if highest_emergence is not None:
-        plt.scatter(highest_emergence[0], highest_emergence[1], c='red', s=80, label='Highest Emergence')
+        ax1.scatter(highest_emergence[0], highest_emergence[1], c='red', s=80, label='Highest Emergence')
 
     # Plot the line from highest emergence to the spread_center if available
     if spread_center is not None and measurements.get('spread_width', 0) > 0:
         half_width = measurements['spread_width'] / 2
-        plt.hlines(spread_center[1],
-                    spread_center[0] - half_width,
-                    spread_center[0] + half_width,
-                    color='magenta',
-                    linestyle='-',
-                    linewidth=2,
-                    label='Spread Line')
+        ax1.hlines(spread_center[1],
+                spread_center[0] - half_width,
+                spread_center[0] + half_width,
+                color='magenta',
+                linestyle='-',
+                linewidth=2,
+                label='Spread Line')
         if highest_emergence is not None and spread_center is not None:
             # Draw a line from highest emergence to spread_center
-            plt.plot([highest_emergence[0], spread_center[0]- half_width], [highest_emergence[1], spread_center[1]], 
+            ax1.plot([highest_emergence[0], spread_center[0]- half_width], [highest_emergence[1], spread_center[1]], 
                 color='yellow', linestyle='--', linewidth=2, label='Emergence-Line')
-    plt.legend(loc='upper right')
+    ax1.legend(loc='upper right')
+    
+    # Bottom row: original image and masks
+    if mask is not None:
+        # Plot the original image
+        plt.subplot(2, 5, 6)
+        plt.imshow(image.permute(1, 2, 0))
+        plt.title("Original Image")
+        plt.axis("off")
+
+        # Plot each mask channel
+        for i in range(min(4, mask.shape[0])):  # Assuming mask has shape (C, H, W)
+            plt.subplot(2, 5, i + 7)
+            plt.imshow(mask[i].cpu().numpy(), cmap='gray')
+            plt.title(f"Mask {i}")
+            plt.axis("off")
+    
+    plt.tight_layout()
     
     if return_image:
         # Convert plot to image

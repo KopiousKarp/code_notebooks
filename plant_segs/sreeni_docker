@@ -1,5 +1,6 @@
 #!/bin/bash
-xhost +local:docker 
+# xhost +local:docker 
+xhost +
 docker run -it \
       --net=host \
       --cap-add=SYS_PTRACE \
@@ -11,8 +12,8 @@ docker run -it \
       --shm-size 8G \
       -v ./:/work \
       -v /media:/media \
+      -v $HOME/.Xauthority:/root/.Xauthority \
       -v /tmp/.X11-unix:/tmp/.X11-unix \
       -e DISPLAY=$DISPLAY \
-      sreeni:test
-
+      sreeni:dev
 

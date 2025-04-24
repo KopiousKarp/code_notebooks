@@ -1,0 +1,102 @@
+% 
+% This is Chapter 1 file (chap1.tex)
+%
+\chapter{Introduction}
+\section{Background}
+%Focus on maize brace roots 
+\subsection{Plant science, Phenomics, the need for accelerated phenotyping methods} 
+Phenomics in cereal crops is a blooming field that focuses on the comprehensive study of phenotypes—observable traits such as growth, development, and stress responses—using advanced technologies. By integrating high-throughput phenotyping methods with genomics, researchers aim to understand the complex interactions between genetic adaptations and the environment. In agriculture, this knowledge is crucial for improving crop yields, resilience to climate change, and overall agricultural sustainability. Through phenomics, scientists can accelerate and inform the selective breeding of cereal crops like wheat, rice, and maize, ensuring food security for a growing global population.
+
+Maize, commonly referred to as corn, is a cornerstone of the U.S. agricultural sector and a significant export commodity. As the largest producer and exporter of maize globally, the United States dedicates approximately 90 million acres to its cultivation annually.\cite{Ates_2023} This crop is pivotal not only for domestic use, primarily as livestock feed and for ethanol production, but also for international trade. Maize yields are expected to increase even as the allocation of land remains stable.\cite{AgOutlook2019} This highlights the scientific interest in improving yields to meet growing demand and ensure sustainable production practices.
+
+An area of interest for maize researchers is the study and optimization of brace roots, ‘above-ground nodal roots of maize that were named for their proposed function in lodging resistance’ \cite{Blizard2020}. Root lodging, the failure of plant anchorage at the root-soil junction, can result from various factors, including strong winds and heavy rains\cite{Blizard2020}. These environmental stresses can significantly impact crop stability and yield, making it crucial to understand and enhance the structural integrity provided by brace roots. By improving the resilience of maize plants to lodging, researchers aim to ensure more consistent and higher yields, contributing to agricultural sustainability and food security.
+
+Long standing literature has identified that a higher number of roots per node (brace root nodes are referred to as whorls), higher numbers of brace root whorls that enter the soil, and whorl spread width are correlated with higher lodging resistance.\cite{Reneau2020} Modern studies on bio-mechanics in maize have confirmed these correlations as well as elucidated a more complex contribution to plant anchorage from brace roots. For example, the notion that increased brace root whorls in the soil leads to increased lodging resistance still holds, but the contribution from each individual whorl decreases as each node gets further from the soil line.\cite{Reneau2020}
+
+Further studies on brace root phenotypes have discovered multiple traits with varying contribution to lodging resistance and quantification of anchorage. \cite{Hostetler2022} 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Images/phenotypes_impact.png}
+    \caption{Figure 2 of Hostetler et al. shows a list of 9 phenotypes and their impact on predictions of root lodging susceptibility}
+    \label{fig:Hostetler-phenotypes}
+\end{figure}
+\subsection{Transcriptomics of Brace Root Mutants(Shoe horn?)}
+\subsection{Current methods for measuring brace root phenotypes (unfinished)}
+
+Current methods for measuring brace root phenotypes primarily rely on images taken directly in the field. These images are then manually measured using the Pythagorean distance formula to calculate pixel distances within the images. This approach significantly enhances efficiency over manual in-field methods, reducing the time required to measure each plant to about one minute.\cite{Hostetler2022} As a result, a larger number of plants can be measured within a single day, greatly increasing the throughput of collecting this phenotypic data.
+
+\begin{figure}[H]
+    \centering
+    \begin{tabular}{ccc}
+     2022 & 2023 & 2024\\\\
+     \includegraphics[width=0.3\textwidth]{Images/2022_example.jpeg} & 
+     \includegraphics[width=0.3\textwidth]{Images/2023_example.jpg} &
+     \includegraphics[width=0.3\textwidth]{Images/2024_example.jpg} \\\\
+    \end{tabular}
+    \caption{Images taken through 3 field seasons, each with a unique camera setup. Images from 2022 were taken on a wide angle lens mounted on a ground based robot. Images from 2023 were taken with a normal perspective camera mounted on the ground based drone. Images from 2024 were taken by a wide angle lens action camera, mounted to a stick kept the same distance from the plant every time.}
+\end{figure}
+\subsection{Automated analysis of root systems}
+Automated analysis of root systems focuses mostly on washed below-ground root systems. Given a binary image of the roots, research software such as rhizovision explorer can skeletonize the mask, prune misidentified roots in the skeleton, and then use the topology of the skeleton to measure the roots. \cite{Seethepalli2021}, 
+These techniques, however, are not robust enough to deal with brace root images. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Images/rhizovision_explorer.png}
+    \caption{Figure 3 from Seethepalli2021 shows how Rhizovision explorer uses the binary segmentation of roots to generate a detailed skeleton of the root system}
+    \label{fig:rhizovision}
+\end{figure}
+
+
+
+
+% sections on color, why are we not addressing it 
+
+
+
+
+%More parts on DIRT3D and FaRIA
+Several new approaches have been developed to analyze root system architecture. However, not all methods are suitable for every research context. Two notable projects, DIRT3D and FaRIA, while innovative in their own right, have limited applicability to studies focused on non-destructive, in situ root imaging. Both DIRT3D and FaRIA rely on imaging protocols that require the plant to be uprooted and the roots to be washed before imaging, which is destructive to the plant and alters the natural root structure.\cite{DIRT3D}\cite{FaRIA}
+
+Attempts to bring cutting edge image processing to plant science surface every single month, such as GRABSEEDS\cite{Tang2024}, which aims to be a one stop shop in plant phenotyping through images, employing many of the techniques that will be discussed in this thesis. Such as established computer vision techniques for measurement and labeling, and some relatively new machine learning models for tasks such as segmentation. 
+%Perhaps more detail on this project GRABSEEDS
+For research scenarios where roots need to be observed in their growing conditions without disturbing the plant, these methods are not suitable. In situ brace root phenotyping, which involves imaging above-ground roots in their natural environment, requires different approaches that can handle the complexities of real-world conditions, such as varying light, soil visibility, and root occlusions. This necessitates the development of specialized imaging and analysis techniques that can accurately capture and quantify root traits without compromising the plant's growth or altering its root architecture.
+
+\subsection{Advancements in automated plant phenotyping}
+Advancements in high-throughput plant phenotyping systems underscore their capability to capture dynamic growth patterns and environmental interactions through automated, time-series imaging. For example, Lee et al. (2018) demonstrated the efficacy of a robotic growth chamber equipped with machine learning-based plant segmentation and environmental sensors, enabling non-destructive, continuous monitoring of traits like biomass and leaf area. Their system employs a stationary plant setup with a mobile imaging module, ensuring minimal plant stress while acquiring high-resolution data in controlled indoor conditions. By leveraging superpixel-based classification and marker-assisted image correction, the method achieves robust segmentation under consistent lighting and predefined hardware configurations.\cite{Lee2018} However, such approaches are inherently tied to controlled laboratory environments, where variables like illumination, camera positioning, and soil composition remain static—conditions unattainable in outdoor field research. In situ phenotyping of above-ground roots or field-grown plants introduces complexities such as fluctuating light, occlusions from the environment, and natural structural variability, which challenge rigid, hardware-dependent systems. While systems like this demonstrate precise phenotyping in controlled environments, their dependence on stable conditions hinders deployment in field studies, where natural variability demands adaptable, context-sensitive approaches.
+
+% section defining "high throughput phenotyping" At what frequency should we consider it high throughput? What makes me a high throughput system?
+
+% Set the record straight on models that say that they can segment "anything". Dealing in the outer rim. 
+\section{Problem Statement}
+In the task of extracting these phenotypes from the brace root images, the largest challenge seems to be segmentation. Rudimentary edge detection based techniques are hit or miss when the focal limits of the images are so variable, complicated even more by the presence of obstructions such as fallen leaves. An almost equally difficult challenge is to filter out these images that provide no value to us when those obstructions make measurement impossible. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Images/edge_detection_example.png}
+    \caption{An attempt at segmenting the background out of the image using a sobel edge detection and binary mask filling algorithm}
+    \label{fig:Edge-detection}
+\end{figure}
+%Instead of detailing events, we need to stick to the presentation style that we have used previously. simply present information
+Next we turn to semi-supervised machine learning techniques. Because we have no ground truth annotations, we turned to using root painter.\cite{Smith2022} A human in the loop annotation and training software that uses a U-net architecture with group normalization. The goal of root painter is to use a small number of annotations created by the user to train an initial model and then use corrective annotations to improve accuracy. In the paper, they describe that models can be created in as little as 2 hours of annotating and training.\cite{Smith2022} But the basic U-net implementation struggles with the brace root images as the background is more complex then the roots-in-soil that it was designed for.   
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{Images/root_painter_example.jpg}
+    \caption{A composite from root painter, showing the original image and the output mask put over that image. Here we can see the bulk of the issue where the model misidentifies brace roots in the background of the image.}
+    \label{fig:rp_example}
+\end{figure}
+
+The other issue is that the data from 2022 \& 2023 was taken at variable working distances from the camera sensor, and so a scale marker is required to convert pixel measurements to metric. The only way to do this in root painter is to train a multi-class model that aims to identify scale markers separate from brace roots. To add another layer of complexity, some phenotypes are also dependent on the plant stalk and so we must add yet another class to the model. 
+
+\begin{figure}[H]
+    \begin{tabular}{ccc}
+     \includegraphics[width=.75\textwidth]{Images/rp_multi_marker.jpg} \\\\ 
+     \includegraphics[width=.75\textwidth]{Images/rp_multi_roots.jpg} \\\\
+     \includegraphics[width=.75\textwidth]{Images/rp_multi_stalk.jpg} \\\\
+    \end{tabular}
+\end{figure}
+
+In order to get accurate measurements, segmentation must improve. Machine learning is the most obvious approach due to the large scale of the problem and the vast differences in data from year to year also necessitate an approach that is highly generalized. 
+
+In deep learning for computer vision tasks, there are 4 categories. Image classification seeks to label images with a set of categories. Object detection seeks to find predefined classes and their position in the image. Semantic segmentation classifies each pixel into a one of a set of predefined classes. Instance segmentation combines object detection and segmentaion in order to find and separate  
+
+
+

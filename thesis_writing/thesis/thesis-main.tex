@@ -1,0 +1,65 @@
+% This file (thesis-main.tex) is the main file for a master's thesis.
+\documentclass {udthesis}
+
+% preamble
+
+% Include graphicx package for the example image used
+% Use LaTeX->PDF if including graphics such as .jpg, .png or .pdf.
+% Use LaTeX->PS->PDF if including graphics such as .ps or .eps
+% Best practice to not specify the file extension for included images,
+% so when LaTeX is building it will look for the appropriate image type.
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+\usepackage{float}
+\usepackage{wrapfig}
+\usepackage{tcolorbox}
+\usepackage{booktabs}
+\usepackage{tabularx}
+
+\usepackage{graphicx} % Required for inserting images
+
+
+\usepackage{mdframed}
+\usepackage{xcolor}
+\usepackage[
+    backend=biber,
+    style=ieee,
+  ]{biblatex}
+\addbibresource{sources.bib}
+\addbibresource{sample.bib}
+
+
+\newtcolorbox{commentbox}{
+boxrule=0pt,
+colback=yellow!40!white,
+sharp corners
+}
+\newtcolorbox{questionbox}{
+boxrule=0pt,
+colback=blue!40!white,
+sharp corners
+}
+                
+\begin{document}
+\include{thesis-tap}
+                   % This file (thesis-tap.tex) contains the Title
+                   % and Approval Page information for a master's thesis.
+
+\include{chap1}    % This file (chap1.tex) contains the text
+                   % for Chapter 1.
+                   
+\include{chap2}    % This file (chap2.tex) contains the text
+                   for Chapter 2.
+\include{chap3}
+\include{chap4}
+\include{chap5}
+
+
+\printbibliography   
+\include{appA}     % This file (appA.tex) contains the text
+                   % for Appendix A. 
+ 
+\include{appB}     % This file (appB.tex) contains the text
+                   % for Appendix B.   
+       
+\end{document}

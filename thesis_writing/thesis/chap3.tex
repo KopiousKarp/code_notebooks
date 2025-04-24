@@ -1,0 +1,179 @@
+\chapter{Proposed Approach}
+\section{Data Collection}
+\subsection{Robotic Platforms \& in-field camera rigs}
+The study employs two primary methods for image acquisition: a custom-made robotic imaging platform (colloquially named Brace Root Robot(Brobot)) described in Stager et al for years 2021 and 2022; in 2023 the robot was upgraded to capture 2 camera feeds with higher resolution camera sensors; in 2024, a insta360 action camera on a selfie stick with a working distance bump stock(colliquially called Phenotyping On The Go (POGO) Stick). The principal method involves a sandcrawler droid designed and operated from 2021 to 2023. This robotic system, developed using ROS2 (Robot Operating System version 2), was specifically engineered to traverse cornfields with a low profile, tracked aluminum chassis (super droid) while capturing continuous streams of images focused on brace roots. The robot's design includes a tracked chassis equipped with sensors and cameras, allowing it to be navigated efficiently and remotely through the agricultural environment. 
+%Go through stager et al to correct the above paragraph
+Another issue that has to be solved out in the field, and the reason that the pogo needs the bumper stock is that the scale of the image has to be determinable. For images from the robot, we employed 1 cm wide plant markers out in the field. The pixel width of the marker in the image would then be used as a conversion ratio to convert the root measurements from pixels to metric.   
+%I want the breakdown of working distance but i still hate the POGO
+The variability introduced by these methods—such as differing focal lengths, perspectives, and operational conditions—is crucial for demonstrating the robustness and versatility of the proposed system. This diversity in image acquisition methodologies underscores the study's objective of creating a model capable of functioning effectively under different real-world scenarios. 
+
+The modality of image acquisition has changed dramatically over the past few years. For the purposes of this study, we will treat the variety in the image acquisition as an oppurtunity to develop a system roboust to many different camera setups. Various digital cameras with different focal parameters have been used, introducing variations in perspective, scale of the subjects, orientation, and shape of image data. Additionally, there have been periods where images were captured using manual shutters operated by humans, and other periods where automatic shutters were employed, facilitated by semi-autonomous robots. These robots, while time efficient, were not capable of discerning optimal samples, leading to "bad" images in the dataset that require filtering.
+
+Consequently, the dataset has become extensive and somewhat disorganized, comprising nearly 2 million images and approximately 2 terabytes of data. The diversity in image acquisition methods has introduced challenges in data management and consistency in processing, necessitating improved strategies for organizing and analyzing this vast amount of information. It has also grown to a size where the feasibility of extracting measurements from all viable images dwindles with each field season. 
+
+
+\section{Dataset Creation}
+The study encountered significant challenges due to the variability in image data resulting from diverse camera sensors used across different years. These variations primarily manifested in differences in image resolution, size, perspective, orientation, and format. For instance: 
+
+    2021 : Images were captured with a wide-angle lens, offering a broader view but lower detail. The format was 2048×1536×3, providing moderate resolution. 
+
+    2022 : Similar to 2021, images used a wide-angle perspective with the same resolution format (2048×1536×3), though capturing brace roots from a different angle. 
+
+    2023 : A shift to a normal perspective and mixed orientation was observed, with a higher resolution format of 1920×1200×3, offering more detailed views of root structures. 
+
+    2024 : Utilizing a fisheye lens, images were captured in landscape orientation with the highest resolution (4032×3024×3), providing a wide-angle view emphasizing ground-level features. 
+ % \begin{figure}
+ %            \centering
+ %            \includegraphics[width=1\linewidth]{images/2021example.jpeg} 
+ %        \end{figure}
+ %        \footnoteize{
+ %        \center{2021} \\
+ %        Perspective: Wide \\
+ %        Orientation: Portrait \\
+ %        Format: 2048x1536x3 \\
+ %        }
+ %        \begin{figure}
+ %            \centering
+ %            \includegraphics[width=1\linewidth]{images/2022example.png}
+ %        \end{figure}
+ %        \footnoteize{
+ %        \center{2022} \\
+ %        Perspective: Wide \\
+ %        Orientation: Portrait \\
+ %        Format: 2048x1536x3 \\
+ %        }
+ %        \column{.2\textwidth}
+ %        \begin{figure}
+ %            \centering
+ %            \includegraphics[width=1\linewidth]{images/2023example.png}
+ %        \end{figure}
+ %        \footnoteize{
+ %        \center{2023} \\
+ %        Perspective: Normal \\
+ %        Orientation: Mixed \\
+ %        Format: 1920x1200x3 \\
+ %        }
+ %        \begin{figure}
+ %            \centering
+ %            \includegraphics[width=1\linewidth]{images/2024example.png}
+ %        \end{figure}
+ %        \footnoteize{
+ %        \center{2024} \\
+ %        Perspective: Fisheye \\
+ %        Orientation:  Landscape \\
+ %        Format: 4032x3024x3 \\
+ %        }        
+
+The primary challenge was the inconsistency in image sizes and resolutions, which necessitated the use of Fully Convolutional Neural Networks (FCNNs) for processing. FCNNs are particularly suited for handling spatial data like images but require uniform input dimensions. To address this, the project team standardized image sizes by down-sampling higher resolution images to match a consistent format. 
+
+This standardization process involved reducing the pixel count of high-resolution images to ensure compatibility with FCNN architectures. While effective in maintaining model consistency and training efficiency, this approach risked potential loss of detail, which could impact the model's accuracy or performance. For example, down-sampling 4032×3024 images to a uniform size might diminish critical features necessary for accurate root structure analysis. 
+
+In summary, the variability in image data necessitated careful preprocessing and the adoption of specific neural network architectures. The standardized approach facilitated effective model training but required balancing between data consistency and detail preservation, highlighting the trade-offs inherent in processing diverse datasets. 
+
+\subsection{ML Accelerated Annotation}
+\textbf{Annotations}
+
+400 training samples were annotated by prompting SAM2 on hand-picked images from the dataset. This annotation process utilized the open-source software called digital sreeni annotator.
+% There needs to be a few paragraphs about sreeni and the modifications that were made to it. 
+% Pehaps an appendix that just shows a change log 
+
+The protocol for selecting and annotating images was as follows:
+\begin{itemize}
+    \item For each year
+    \item Select 5 imaging days evenly spaced throughout the months of July, August, \& September
+    \item Scroll through the images to find and annotate 20 images per testing day
+\end{itemize}
+
+To ensure comprehensive coverage and minimize domain shifts that can affect performance, images were sampled across the entire growth season. This approach aligns with literature highlighting the susceptibility of plant science machine learning tasks to changes in growth stages \cite{Banet2024}.
+
+\section{Pre-processing and augmentations}
+
+\textbf{Preprocessing and Augmentations}
+
+The preprocessing and augmentation pipeline was designed to enhance model robustness and generalization. The process begins with standard transformations followed by data augmentation.
+
+Standard Transformations
+The standard transformations applied to all images include:
+\begin{itemize}
+    \item Padding the image to make it square using symmetric padding
+    \item Resizing the image to 512x512 pixels % What technique
+    \item Converting the image values to a PyTorch tensor
+\end{itemize}
+
+
+% The following augmentations were applied during training:
+% \begin{itemize}
+%     \item Random perspective transformation with a distortion scale of 0.25
+%     \item Random affine transformations including rotations, translations, scaling, and shearing
+%     \item Random horizontal flip with a probability of 0.5
+%     \item Color jittering for brightness, contrast, saturation, and hue
+%     \item Gaussian blur with varying kernel sizes and sigmas
+%     \item Random rotation up to 5 degrees
+% \end{itemize}
+% \begin{table}[ht]
+% \begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X >{\raggedright\arraybackslash}X}
+
+% \toprule
+% \textbf{Name} & \textbf{Parameters}& \textbf{Notes/Reasoning} \\
+% \midrule
+% \small{Random perspective} & 
+% \small{\texttt{distortion scale = 0.25}} & 
+% \small{Enhances robustness to viewpoint changes found in the images collected by the Brobot.}\\
+% \small{Random affine}& 
+% \small{Includes rotations, translations, scaling, and shearing}& 
+% \small{Simulates various geometric distortions.} \\
+% \small{Random horizontal flip}& 
+% \small{Applied with a probability of 0.5} & 
+% \small{Increases data variability for symmetric objects.} \\
+% \small{Color jittering}& 
+% \small{Adjusts brightness, contrast, saturation, and hue} & 
+% \small{Improves model robustness to lighting variations in the field.} \\
+% \small{Gaussian blur}& 
+% \small{Applied with varying kernel sizes and sigmas} & 
+% \small{Mimics the different camera focus conditions in the field.} \\
+% \small{Random rotation}& 
+% \small{Applied up to 5 degrees}& 
+% \small{Mimics minor rotational invariance in the images.}\\
+% \bottomrule
+% \end{tabularx}
+
+\begin{table}[ht]
+\begin{tabularx}{\linewidth}{>{\raggedright\arraybackslash}X p{0.35\linewidth} >{\raggedright\arraybackslash}X}
+
+\toprule
+\textbf{Name} & \textbf{Parameters} & \textbf{Notes/Reasoning} \\
+\midrule
+Random perspective & \texttt{RandomPerspective(p=0.5, distortion\_scale=0.25)} & Simulates slight changes in camera viewpoint to mimic natural variability of in-field images. \\
+Random affine      & \texttt{RandomAffine(degrees=15, translate=(0.1, 0.1), scale=(0.8, 1.2), shear=10)} & Introduces geometric distortions such as rotations, translations, scaling, and shearing, reflecting variations in plant positioning. \\
+Random horizontal flip & \texttt{RandomHorizontalFlip(p=0.5)} & Increases data variability by flipping images horizontally, useful for symmetric structures like brace root whorls. \\
+Color jittering    & \texttt{ColorJitter(brightness=0.5, contrast=0.5, saturation=0.5, hue=0.1)} & Adjusts brightness, contrast, saturation, and hue to simulate different lighting conditions in the field. \\
+Gaussian blur    & \texttt{GaussianBlur(kernel\_size=(5, 9), sigma=(0.1, 5))} & Applies blur with variable kernel sizes and sigma values to mimic camera focus variations. \\
+Random rotation  & \texttt{RandomRotation(degrees=5)} & Rotates images up to 5 degrees to simulate minor rotational variations during image capture. \\
+\bottomrule
+\end{tabularx}
+\caption{Augmentations applied during training with corresponding parameter settings and their effects.}
+\label{tab:augmentations_notes}
+\end{table}
+%add images?
+
+
+\section{Architecture}
+The model follows a UNet architecture, which is widely used for semantic segmentation tasks due to its effective feature extraction and skip connection mechanisms. The encoder in this implementation uses ResNet-34 as its backbone, initialized with ImageNet pre-trained weights. This choice leverages the powerful feature representation capabilities of ResNet-34, allowing the model to capture hierarchical features from the input images. The encoder processes the input RGB images (with 3 channels) and extracts relevant spatial and contextual information, which is then passed through a series of decoding layers to produce precise segmentations. The final output of the model corresponds to 4 classes, making it suitable for multi-class segmentation tasks. 
+
+The training process is optimized by minimizing cross entropy loss, which is well-suited for multi-class classification and segmentation problems with skewed datasets \cite{Jadon2020}. To address potential class imbalances in the dataset, proportional class weights are incorporated into the loss calculation, ensuring that underrepresented classes receive more attention during training. The weights are adjusted using the Adam optimizer, which combines the benefits of adaptive learning rates (ADAM) and gradient decay (RMSProp). The optimizer is configured with a learning rate of 0.0001 and a weight decay of 1e-5, both of which were carefully chosen to balance training stability and convergence speed. 
+% should this be chosen more intelligently... probably
+
+The cross-entropy loss is used in this architecture because it is well-suited for multi-class classification and segmentation tasks. To address the massive class imbalance between the background and other classes, class weights are incorporated into the loss calculation. The weights are computed by first counting the number of pixels for each class across all images in the training set, then calculating the proportion of each class relative to the total number of pixels. Finally, the weights are set as the inverse of these proportions, giving more emphasis to underrepresented classes. This weighted cross-entropy loss formulation ensures that the model pays greater attention to rare or imbalanced classes during training, improving its ability to generalize and segment all classes accurately.
+
+Mathematically, the weighted cross-entropy loss is defined as:
+\[
+L = -\frac{1}{N} \sum_{k=1}^N \sum_{i=1}^{C} w_i y_i(k) \log(y^i(k))
+\]
+where $N$ is the total number of pixels, $C$ is the number of classes, $w_i = 1 - p_i$ are the computed weights (with $p_i$ being the proportion of class $i$), $y_i(k)$ is the true label for class $i$ at pixel $k$, and $y^i(k)$ is the predicted probability for class $i$ at pixel $k$. This formulation ensures that underrepresented classes are given greater importance in the loss calculation, helping to mitigate class imbalance and improve overall model performance. 
+
+\section{Classifier head}
+The development of a classifier that can efficiently and automatically distinguish between good samples and bad samples is crucial for high-throughput phenotyping tasks where the where the data collection takes a shotgun approach, such as those found in robotics platforms or video-feed-like image sets. By leveraging the latent space of our encoder, we can create a robust classifier that achieves state-of-the-art performance.
+
+To extract meaningful features from our images, we utilize the finetuned UNET encoder. The output of this encoder is a volume of 512x16x16 for each image. By applying average pooling to each 16x16 slice, we compress the feature maps into a discrete signal that can be fed into a logistic regression model.
+
+%add more on these: What do these embeddings look like? what other techniques can we use?
