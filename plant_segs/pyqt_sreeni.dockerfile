@@ -95,7 +95,11 @@ RUN /opt/sam2_env/bin/pip3 install \
     pycocotools \
     scikit-learn \
     jupyter \
-    segmentation-models-pytorch
+    segmentation-models-pytorch \ 
+    pandas \
+    ftfy \
+    regex \
+    git+https://github.com/openai/CLIP.git
   #for some reason this didn't quite work
   #Missing software:
     # jupyter 
