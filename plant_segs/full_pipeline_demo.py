@@ -13,14 +13,14 @@ from PadSquare import PadSquare
 import json
 import os
 import fnmatch
-from plant_mask_measurements import find_rectangular_width, measure_root_mask, plot_measurements
+from plant_mask_measurements import find_rectangular_width, measure_root_mask, plot_measurements, aprox_count_and_width
 import segmentation_models_pytorch as smp
 from segmentation_models_pytorch.encoders import get_preprocessing_fn
 import cv2
 import torch.nn as nn
 preprocess_input = get_preprocessing_fn('resnet34', pretrained='imagenet')
 model = smp.Unet('resnet34', encoder_weights='imagenet', in_channels=3, classes=4, activation=None)
-model.load_state_dict(torch.load('/work/multiclass_multiyear_UNET_sm.pth', map_location=device,weights_only=True))
+model.load_state_dict(torch.load('/work/best_model.pth', map_location=device,weights_only=True))
 model = model.to(device)
 classifier = torch.load('/work/best_classifier.pth',weights_only=False)
 def find_images(directory):
@@ -30,18 +30,6 @@ def find_images(directory):
             if fnmatch.fnmatch(filename, '*.png') or fnmatch.fnmatch(filename, '*.jpg') or fnmatch.fnmatch(filename, '*.jpeg'):
                 image_files.append(os.path.join(root, filename))
     return image_files
-
-# Start with classifier notebook. 
-# Create a utils python file so that importing code is easy
-# If classifier hits, follow thrugh to encoder
-# After encodeer, go the measurement
-
-#Output should be a slideshow viseo with automated annotations
-
-
-
-
-
 
 # predict file paths; from the sorting notebook
 def predict_filepaths(
@@ -65,7 +53,7 @@ def predict_filepaths(
     if job_dir.endswith('/'):
         job_dir = job_dir[:-1]
     json_file = f"{job_dir.split('/')[-1]}_{model_name}_{classifier_name}_{device}.json"
-    
+    print(f"Using json file: {json_file}")
     if os.path.exists(json_file):
         with open(json_file, 'r') as f:
             data = json.load(f)
@@ -97,13 +85,12 @@ def predict_filepaths(
                 
                 # 3) Make classifier prediction
                 pred = best_classifier.predict(feats_for_classifier)[0]
-                data[path] = int(pred)
-                
+                measurements = None
                 if pred == 1:
                     #Proceed with decoder; might need a batch dimension added
                     # bottleneck = model.
-                    outputs = model.decoder(*feats)
-                    mask = model.segmentation_head(outputs)
+                    outputs = model.decoder(feats)
+                    mask = model.segmentation_head(outputs) 
                     # Apply softmax activation to convert logits to probabilities
                     mask = torch.nn.functional.softmax(mask, dim=1)
                     # Convert probability maps to binary masks
@@ -115,9 +102,9 @@ def predict_filepaths(
                     # Convert the root mask to uint8 with values 0 and 255 for OpenCV compatibility
                     root_mask = (mask[2].cpu().numpy() * 255).astype(np.uint8)
                     # Pass Stalk mask for find_rectangular_width
-                    stalk_bbox = find_rectangular_width(mask[3].cpu().numpy(), center=(250,250))
+                    stalk_bbox, width = find_rectangular_width(mask[3].cpu().numpy(), center=(250,250))
                     # Check if stalk_bbox is a single value and convert to expected format if needed
-                    
+                    marker_bbox, marker_width = find_rectangular_width(mask[1].cpu().numpy(), center=None)
                     # Convert stalk_bbox from (x, y, width, height) to array of points
                     if isinstance(stalk_bbox, tuple) and len(stalk_bbox) == 4:
                         x, y, w, h = stalk_bbox
@@ -129,13 +116,20 @@ def predict_filepaths(
                         continue        
                     # Remove redundant call, only use root_mask which is already processed
                     measurements = measure_root_mask(root_mask, bbox_points)
+                    measurements['marker_width'] = marker_width
+                    # Convert img_pp from [1, 3, 512, 512] to [512, 512, 3]
+                    img_np = img_pp.squeeze(0).permute(1, 2, 0).cpu().numpy()
+                    measurements["root_count"], measurements["root_width"] = aprox_count_and_width(root_mask, img_np, bbox_points)
                     print(measurements)
-                    
+                              
                     # Retrieve frame from plot_measurements and save to video
                     frame = plot_measurements(img_t, bbox_points, measurements,mask, return_image=True)
                     video.append(frame)
-                print(f"index: {index} Predicted {path} as {pred}")    
-            
+                print(f"index: {index} Predicted {path} as {pred}")
+                if measurements is None:
+                    data[path] = {"measurable":int(pred), "measurements":None}
+                else:
+                    data[path] = {"measurable":int(pred), "measurements":measurements}# Save results to json             
         if index % 100 == 0:
             with open(json_file, 'w') as f:
                 json.dump(data, f)

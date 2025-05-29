@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-
+from skimage.morphology import skeletonize
 
 def find_rectangular_width(mask, center=None):
     """
@@ -31,7 +31,7 @@ def find_rectangular_width(mask, center=None):
     contours, _ = cv2.findContours(mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     boxes = []    # rotated rectangle vertices for each contour
     widths = []   # the smaller side (width) of each rectangle
-    
+    reported_width = 69
     for cnt in contours:
         if cv2.contourArea(cnt) == 0:
             continue
@@ -47,7 +47,7 @@ def find_rectangular_width(mask, center=None):
         rect = cv2.minAreaRect(cnt)  # rect = ((cx,cy), (w,h), angle)
         box = cv2.boxPoints(rect)      # get 4 vertices
         box = np.intp(box)
-        
+        reported_width = rect[1][0]
         # By convention, choose the smaller side as the true width.
         w, h = rect[1]
         rect_width = min(w, h)
@@ -60,13 +60,39 @@ def find_rectangular_width(mask, center=None):
             idx = np.argmax(widths)
             best_box = boxes[idx]
             result = best_box
+            reported_width = widths[idx]
         else:
             result = None
     else:
         result = np.mean(widths) if widths else None
 
     
-    return result
+   
+    if center is not None:
+        if result is not None:
+            # Determine which rectangle edge is most vertical by checking x-coordinate differences.
+            vertical_differences = [abs(result[i][0] - result[(i+1) % 4][0]) for i in range(4)]
+            idx_edge = np.argmin(vertical_differences)
+            p1 = result[idx_edge]
+            p2 = result[(idx_edge+1)%4]
+            # Also plot the opposite edge.
+            opp_edge = (result[(idx_edge+2)%4], result[(idx_edge+3)%4])
+            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], color='purple', linewidth=2)
+            plt.plot([opp_edge[0][0], opp_edge[1][0]], [opp_edge[0][1], opp_edge[1][1]], color='purple', linewidth=2)
+    else:
+        # When no center is provided, plot vertical edges for all regions.
+        for box in boxes:
+            vertical_differences = [abs(box[i][0] - box[(i+1)%4][0]) for i in range(4)]
+            idx_edge = np.argmin(vertical_differences)
+            p1 = box[idx_edge]
+            p2 = box[(idx_edge+1)%4]
+            opp_edge = (box[(idx_edge+2)%4], box[(idx_edge+3)%4])
+            plt.plot([p1[0], p2[0]], [p1[1], p2[1]], color='purple', linewidth=2)
+            plt.plot([opp_edge[0][0], opp_edge[1][0]], [opp_edge[0][1], opp_edge[1][1]], color='purple', linewidth=2)
+
+
+    return result, reported_width
+
 
 
 def measure_root_mask(root_mask, stalk_bbox):
@@ -251,3 +277,65 @@ def plot_measurements(image, bbox, measurements, mask=None, return_image=False):
         plt.show()
         plt.close(fig)
         return None
+    
+def aprox_count_and_width(mask, image, stalk_bbox=None):
+    """
+    Estimate the number of roots and their average width in a root mask.
+    
+    Parameters:256 stalk ([], [], [], [])
+    
+    Returns:
+      tuple (root_count, avg_width)
+    """
+    # ensure binary mask
+    print(f"Mask shape: {mask.shape}")
+    print(f"Image shape: {image.shape}")
+    mask = mask.astype(np.uint8)
+    #get contours
+    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    if stalk_bbox is None:
+        stalk_bbox = ([mask.shape[0]//3,0], [0,0], [mask.shape[0]//3,0], [69,69])
+    for contour in contours: 
+      x, y, w, h = cv2.boundingRect(contour)
+      if ((x < stalk_bbox[0][0] and x+w > stalk_bbox[0][0]) or 
+          (x < stalk_bbox[2][0] and x+w > stalk_bbox[2][0]) or 
+          (x > stalk_bbox[0][0] and x+w < stalk_bbox[2][0])):
+          cv2.drawContours(mask, [contour], -1, 255, thickness=-1)
+    # Threshold the mask to ensure it is binary (0 or 255)
+    # This helps in removing "ghost" artifacts if the mask has intermediate values.
+    mask = (mask > 127).astype(np.uint8) * 255
+    # Apply the mask to the image
+    image = cv2.bitwise_and(image, image, mask=mask)
+    # Blur the image to reduce noise and smooth out details
+    image = cv2.GaussianBlur(image, (5, 5), 10)
+    edges = cv2.Canny(image.astype(np.uint8), 0, 200) # Adjust thresholds as needed
+    # Find contours in the edge-detected image
+    edges = cv2.dilate(edges, None, iterations=1)
+    # skeletonize the dilated edge image
+    skeleton = skeletonize(edges > 0)
+    # convert boolean skeleton to uint8 for plotting
+    edges = (skeleton.astype(np.uint8)) * 255
+    # Count the number of contours
+    edges = cv2.bitwise_not(edges)  # Invert the edges to get the roots
+    edges = cv2.bitwise_and(edges, mask)  # Apply the mask to the edges
+    contours, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    #remove all contours smaller than the average contor area 
+    print(f"Found {len(contours)} contours in the edge-detected image.")
+    contour_areas = [cv2.contourArea(c) for c in contours]
+    avg_area = np.mean(contour_areas)
+    print(f"Average contour area: {avg_area:.2f}")
+    contours = [c for c in contours if cv2.contourArea(c) > 20]
+    root_count = len(contours)
+    root_widths = []
+    for contour in contours:
+        # Get the bounding box of the contour
+        x, y, w, h = cv2.boundingRect(contour)
+        # Calculate the width of the root
+        root_width = w
+        root_widths.append(root_width)
+    # Calculate the average width of the roots
+    if root_widths:
+        avg_width = np.mean(root_widths)
+    else:
+        avg_width = 0
+    return root_count, avg_width
