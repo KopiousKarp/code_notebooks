@@ -86,6 +86,7 @@ def predict_filepaths(
                 # 3) Make classifier prediction
                 pred = best_classifier.predict(feats_for_classifier)[0]
                 measurements = None
+                pred = 1 #REMOVE THIS LINE TO USE CLASSIFIER PREDICTION
                 if pred == 1:
                     #Proceed with decoder; might need a batch dimension added
                     # bottleneck = model.
@@ -117,6 +118,7 @@ def predict_filepaths(
                     # Remove redundant call, only use root_mask which is already processed
                     measurements = measure_root_mask(root_mask, bbox_points)
                     measurements['marker_width'] = marker_width
+                    measurements['stalk_width'] = width
                     # Convert img_pp from [1, 3, 512, 512] to [512, 512, 3]
                     img_np = img_pp.squeeze(0).permute(1, 2, 0).cpu().numpy()
                     measurements["root_count"], measurements["root_width"] = aprox_count_and_width(root_mask, img_np, bbox_points)
@@ -165,7 +167,7 @@ def predict_filepaths(
 
 
 predict_filepaths(
-    "/work/2023_annot/",
+    "/opt/RootTaggingGUI/stalk_images/",
     "UNET",
     "logistic_regression", 
     model,           # trained UNET (or similar) model

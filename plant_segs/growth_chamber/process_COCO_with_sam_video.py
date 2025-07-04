@@ -172,8 +172,8 @@ if __name__ == "__main__":
     new_annotations = []
     for frame_idx, objs in video_segments.items():
         ann = {
-            'id': 1000,  # Unique annotation ID
-            'image_id': 1,  # ID of the image
+            'id': ,  # Unique annotation ID
+            'image_id': frame_idx,  # ID of the image
             'category_id': 1,  # ID of the category
             'bbox': [20, 30, 50, 70],  # Bounding box [x, y, width, height]
             'area': 50 * 70,

@@ -249,11 +249,12 @@ def plot_measurements(image, bbox, measurements, mask=None, return_image=False):
         plt.title("Original Image")
         plt.axis("off")
 
+        plot_labels = ['Background', 'Marker', 'Root', 'Stalk']
         # Plot each mask channel
         for i in range(min(4, mask.shape[0])):  # Assuming mask has shape (C, H, W)
             plt.subplot(2, 5, i + 7)
             plt.imshow(mask[i].cpu().numpy(), cmap='gray')
-            plt.title(f"Mask {i}")
+            plt.title(f"{plot_labels[i]} Mask")
             plt.axis("off")
     
     plt.tight_layout()
