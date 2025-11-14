@@ -1,9 +1,9 @@
-import torch
+import torch 
 from torch.utils.data import DataLoader, Subset, random_split # Added random_split
 from torchvision import datasets, transforms
 from torchvision.transforms import v2
-# from sklearn.model_selection import KFold # Removed KFold
-# from sklearn.model_selection import train_test_split # Using torch.utils.data.random_split instead
+from sklearn.model_selection import KFold # Removed KFold
+from sklearn.model_selection import train_test_split # Using torch.utils.data.random_split instead
 import numpy as np
 import segmentation_models_pytorch as smp
 from segmentation_models_pytorch.encoders import get_preprocessing_fn
@@ -62,7 +62,7 @@ parser.add_argument('--epochs', type=int, default=25, help='Number of epochs for
 parser.add_argument('--batch_size', type=int, default=16, help='Batch size for training and validation.')
 parser.add_argument('--num_workers', type=int, default=2, help='Number of workers for DataLoader.')
 parser.add_argument('--no_augmentations', action='store_false', default=True, help='Whether to apply augmentations to the training set.')
-
+parser.add_argument('--Kfold', type=int, default=0, help='Number of folds for K-Fold cross-validation (0 for no K-Fold).') 
 args = parser.parse_args()
 
 coco_roots = args.coco_roots

@@ -1,4 +1,5 @@
 import torch
+torch.backends.cuda.sdp_kernel(enable_flash=True, enable_mem_efficient=True, enable_math=True)
 from torchvision import datasets, transforms
 from torchvision.transforms import v2
 import argparse
@@ -11,6 +12,9 @@ import re
 from datetime import datetime
 import tempfile
 import shutil
+import cv2
+import glob
+
 
 def load_coco_data(coco_root, coco_annFile):
     """
@@ -23,13 +27,8 @@ def load_coco_data(coco_root, coco_annFile):
     Returns:
         dataset: COCO dataset with images and annotations
     """
-    # Define minimal transform that preserves original dimensions
-    minimal_transform = transforms.v2.Compose([
-        v2.ToTensor()  # Convert to tensor
-    ])
-    
     # Load COCO dataset
-    dataset = datasets.CocoDetection(root=coco_root, annFile=coco_annFile, transforms=minimal_transform)
+    dataset = datasets.CocoDetection(root=coco_root, annFile=coco_annFile)
     
     # Wrap dataset for handling masks properly
     dataset = datasets.wrap_dataset_for_transforms_v2(dataset, target_keys=("labels", "masks"))
@@ -55,7 +54,7 @@ def process_with_sam2(coco_root, coco_api, sam2_checkpoint, model_cfg, device="c
     """
     # Build SAM2 video predictor
     predictor = build_sam2_video_predictor(model_cfg, sam2_checkpoint, device=device)
-    
+    # predictor.model = predictor.model.to(torch.float16)
     # NOT SURE I NEED THIS
     # images = coco_api.loadImgs(img_ids)
     
@@ -81,22 +80,23 @@ def process_with_sam2(coco_root, coco_api, sam2_checkpoint, model_cfg, device="c
     # Extract filenames in timestamp order
     frame_names = {filename: idx for idx, (filename, _) in enumerate(timestamps_with_files)}
 
-    # Print first 10 items (or fewer if there are less than 10)
-    for i, (filename, idx) in enumerate(list(frame_names.items())[:10]):
-        print(f"{filename}: {idx}")
+    # # Print first 10 items (or fewer if there are less than 10)
+    # for i, (filename, idx) in enumerate(list(frame_names.items())[:10]):
+    #     print(f"{filename}: {idx}")
 
     # condition_frame_number = frame_names[coco_api.loadImgs(coco_api.getImgIds())[0]['file_name']]
     # print(f"Condition frame number: {condition_frame_number}")    
 
     temp_video_dir = tempfile.mkdtemp() 
-    for i, (filename, _) in enumerate(timestamps_with_files):
+    for i, (filename, _) in enumerate(timestamps_with_files): 
         shutil.copy(os.path.join(coco_root, filename), os.path.join(temp_video_dir, f"{i:04d}.jpg"))
     print(f"Created temporary video directory at: {temp_video_dir}")
 
     # Initialize SAM2 state
     inference_state = predictor.init_state(video_path=temp_video_dir,
                                            offload_video_to_cpu=True,
-                                           offload_state_to_cpu=True)
+                                           offload_state_to_cpu=True,
+                                           async_loading_frames=True)
     
 
     print(f"Initialized SAM2 state with video at: {temp_video_dir}")
@@ -157,7 +157,7 @@ if __name__ == "__main__":
     dataset, coco_api = load_coco_data(args.coco_root, args.coco_annFile)
     
     print(f"Successfully loaded COCO dataset with {len(dataset)} images")
-    
+    print(os.getcwd())
     # Process masks with SAM2 video predictor
     video_segments, frame_names = process_with_sam2(
         args.coco_root, 
@@ -166,19 +166,70 @@ if __name__ == "__main__":
         args.model_cfg, 
         args.device
     )
-    
+    frame_names = {v: k for k, v in frame_names.items()}
+    # print(coco_api.imgs)
     ### TODO: add the masks to the annotations in the COCO format
     ### and save the updated COCO JSON file
     new_annotations = []
     for frame_idx, objs in video_segments.items():
-        ann = {
-            'id': ,  # Unique annotation ID
-            'image_id': frame_idx,  # ID of the image
-            'category_id': 1,  # ID of the category
-            'bbox': [20, 30, 50, 70],  # Bounding box [x, y, width, height]
-            'area': 50 * 70,
-            'iscrowd': 0
-        }
+        for cat_id in objs:
+            masklet = objs[cat_id][0]
+            # print(type(frame_idx), frame_idx)
+            # print(type(frame_names), frame_names)
+            # print(frame_names[frame_idx])
+            filename = 'output/' + frame_names[frame_idx].split(".")[0] + '_' + str(cat_id) + '.jpg'
+            masklet = (masklet.astype("uint8") * 255)
+            cv2.imwrite(filename, masklet)
+            # contours, _ = cv2.findContours((masklet[0] > 0).astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            # polygons = []
+            # for contour in contours:
+            #     if cv2.contourArea(contour) > 200:
+            #         polygon = contour.flatten().tolist()
+            #         if len(polygon) >= 6:
+            #             polygons.append(polygon)
+            # #add the polygon as an annotation 
+            
+           # Directory with saved masks
+    out_dir = "output"
+
+    # Collect all files
+    all_files = glob.glob(os.path.join(out_dir, "*.jpg"))
+
+    # Group by last number (plant ID)
+    groups = {}
+    for f in all_files:
+        # Extract the trailing "_<id>.jpg"
+        match = re.search(r"_(\d+)\.jpg$", f)
+        if match:
+            cat_id = match.group(1)
+            groups.setdefault(cat_id, []).append(f)
+
+    # Create timelapse per plant
+    for cat_id, files in groups.items():
+        # Sort frames by timestamp in filename (lexical works since timestamps are zero-padded)
+        files.sort()
+
+        # Read first frame to get dimensions
+        frame0 = cv2.imread(files[0])
+        h, w, _ = frame0.shape
+
+        out_path = os.path.join(out_dir, f"timelapse_cat{cat_id}.mp4")
+        fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+        fps = 4  # adjust for playback speed
+        video = cv2.VideoWriter(out_path, fourcc, fps, (w, h))
+
+        for f in files:
+            frame = cv2.imread(f)
+            if frame is None:
+                print(f"⚠️ Skipping unreadable file: {f}")
+                continue
+            video.write(frame)
+
+        video.release()
+        print(f"✅ Timelapse saved: {out_path}")
+
+
+
     
 
     print(f"Successfully processed {len(video_segments)} frames with SAM2")
